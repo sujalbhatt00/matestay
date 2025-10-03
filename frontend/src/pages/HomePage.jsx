@@ -3,6 +3,7 @@ import InteractiveBackground from "../components/InteractiveBackground";
 import Navbar from "../components/Navbar";
 import Features from "../components/ui/Features";
 import Steps from "../components/ui/Steps";
+import Ready from "../components/ui/Ready";
 
 export default function HomePage() {
   return (
@@ -71,7 +72,16 @@ export default function HomePage() {
 
         <Steps />
 
+        {/* Ready Section */}
+
+        <Ready />
+
       </div>
+      <footer className="py-8 px-4 text-center text-[#72a8b7]">
+        <div className="container mx-auto">
+          <p>© 2024 Flatmate. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
