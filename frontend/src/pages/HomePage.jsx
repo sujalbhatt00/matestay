@@ -1,7 +1,8 @@
-import React from "react";
 import { Search, Home, Users } from "lucide-react";
 import InteractiveBackground from "../components/InteractiveBackground";
 import Navbar from "../components/Navbar";
+import Features from "../components/ui/Features";
+import Steps from "../components/ui/Steps";
 
 export default function HomePage() {
   return (
@@ -13,7 +14,7 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero Section */}
-      <div className="mt-[18rem] absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 space-y-12">
+      <div className="mt-[8rem] flex flex-col items-center justify-center text-center text-white px-4 space-y-12">
         <div className="bg-black/5 backdrop-blur-lg border border-white/10 shadow-lg rounded-2xl px-12 py-12 max-w-6xl w-full flex flex-col space-y-8">
           <h1 className="text-5xl md:text-8xl font-bold drop-shadow-[0_0_12px_#03c2eb]">
             Find Your Perfect
@@ -62,6 +63,14 @@ export default function HomePage() {
             <p className="text-white/70">AI-powered compatibility</p>
           </div>
         </div>
+
+        {/* Features Section */}
+        <Features />
+
+        {/* Steps Section */}
+
+        <Steps />
+
       </div>
     </div>
   );
