@@ -1,15 +1,5 @@
 @import "tailwindcss";
 
-@layer utilities {
-  .bg-dissolve {
-    animation: dissolveBG 15s ease infinite;
-  }
-
-  @keyframes dissolveBG {
-    0%   { background-color: #1e3c72; }   /* dark navy */
-    25%  { background-color: #2a5298; }   /* rich blue */
-    50%  { background-color: #56ccf2; }   /* sky blue */
-    75%  { background-color: #2f80ed; }   /* vibrant blue */
-    100% { background-color: #1e3c72; }   /* back to start */
-  }
+.text-glow {
+  text-shadow: 0 0 8px #03c1eba1, 0 0 16px #03c1eb76;
 }

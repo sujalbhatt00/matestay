@@ -9,7 +9,7 @@ const Navbar = () => {
       <div className="container mx-auto max-w-7xl">
         <div
           className="
-            bg-white/5 backdrop-blur-md border border-white/10 shadow-lg
+            bg-black/5 backdrop-blur-lg border border-white/10 shadow-lg
             rounded-2xl px-6 py-4 flex items-center justify-between
             transition-all duration-300 hover:scale-[1.01]
           "
@@ -67,7 +67,7 @@ const Navbar = () => {
         {isMenuOpen && (
           <div
             className="
-              md:hidden mt-4 bg-white/5 backdrop-blur-md border border-white/10 shadow-lg
+              md:hidden mt-4 bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg
               rounded-2xl p-6 space-y-4
             "
           >
