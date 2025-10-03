@@ -20,7 +20,7 @@ const Navbar = () => {
               <Home className="w-6 h-6 text-blue-400" />
             </div>
             <span className="text-2xl font-bold text-white">
-              Flat<span className="text-blue-400">mate</span>
+              Mate<span className="text-blue-400">stay</span>
             </span>
           </div>
 
