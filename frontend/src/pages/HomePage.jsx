@@ -7,7 +7,7 @@ import Ready from "../components/ui/Ready";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen overflow-x-hidden text-white">
       {/* Background */}
       <InteractiveBackground />
 
@@ -15,72 +15,56 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero Section */}
-      <div className="mt-[8rem] flex flex-col items-center justify-center text-center text-white px-4 space-y-12">
-        <div className="bg-black/5 backdrop-blur-lg border border-white/10 shadow-lg rounded-2xl px-12 py-12 max-w-6xl w-full flex flex-col space-y-8">
-          <h1 className="text-5xl md:text-8xl font-bold drop-shadow-[0_0_12px_#03c2eb]">
+      <section className="mt-32 flex flex-col items-center px-4 text-center space-y-16">
+        <div className="backdrop-blur-xl border border-white/10 shadow-xl rounded-3xl p-10 md:p-16 max-w-6xl w-full bg-black/20">
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-[0_0_15px_#03c2eb] leading-tight">
             Find Your Perfect
-            <span className="block text-[#03c2eb] mt-2">Roommate</span>
+            <span className="block text-[#03c2eb] mt-3">Roommate</span>
           </h1>
-          <p className="text-lg md:text-2xl text-[#8cccd9] max-w-3xl mx-auto">
-            Connect with compatible roommates and discover your ideal shared living space
+          <p className="mt-6 text-lg md:text-2xl text-[#a6dfea] max-w-2xl mx-auto">
+            Connect with verified roommates and discover your ideal shared living space.
           </p>
         </div>
 
-        {/* Buttons */}
+        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button className="flex items-center gap-2 text-lg px-8 py-3 rounded-xl cursor-pointer bg-[#03c2eb] hover:bg-[#0c7795] text-black font-semibold shadow-lg transition-all duration-300 border border-blue-400/30 hover:border-blue-400/50">
-            <Search className="w-6 h-6" />
-            Find Flatmates
+          <button className="flex items-center gap-3 px-10 py-4 text-lg rounded-xl bg-[#03c2eb] hover:bg-[#089fbd] text-black font-semibold shadow-lg transition-all hover:scale-105 active:scale-95">
+            <Search className="w-6 h-6" /> Find Flatmates
           </button>
-          <button className="flex items-center gap-2 text-lg px-8 py-3 backdrop-blur-sm cursor-pointer rounded-xl bg-transparent hover:bg-blue-900/20 text-white font-semibold shadow-lg transition-all duration-300 border border-blue-400/30 hover:border-blue-400/50">
-            <Home className="w-6 h-6" />
-            List Your Space
+
+          <button className="flex items-center gap-3 px-10 py-4 text-lg rounded-xl border border-[#03c2eb]/40 backdrop-blur-sm hover:bg-[#0d2c36]/40 transition-all hover:scale-105 active:scale-95">
+            <Home className="w-6 h-6" /> List Your Space
           </button>
         </div>
 
-        {/* Floating Glass Cards */}
-        <div className="grid md:grid-cols-3 gap-15 pt-16 max-w-6xl w-[65%]">
-          <div className="p-6 hover:shadow-[0_0_10px_rgba(0,140,204,0.5)] rounded-2xl space-y-3 transition-all duration-300 hover:-translate-y-2 bg-black/5 backdrop-blur-md border border-white/20 shadow-lg">
-            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-              <Users className="w-6 h-6 text-primary" />
+        {/* Floating Stats Section */}
+        <div className="grid md:grid-cols-3 gap-10 pt-10 max-w-4xl w-full">
+          {[
+            { icon: Users, title: "10K+ Users", desc: "Active flatmate seekers" },
+            { icon: Home, title: "5K+ Listings", desc: "Available properties" },
+            { icon: Search, title: "Smart Match", desc: "AI-powered compatibility" },
+          ].map((item, index) => (
+            <div
+              key={index}
+              className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:shadow-[0_0_20px_#03c2eb] transition-all hover:-translate-y-2 text-center"
+            >
+              <div className="w-14 h-14 rounded-full bg-[#03c2eb]/20 flex items-center justify-center mx-auto mb-4">
+                <item.icon className="w-7 h-7 text-[#03c2eb]" />
+              </div>
+              <h3 className="text-xl font-semibold">{item.title}</h3>
+              <p className="text-white/70 text-sm">{item.desc}</p>
             </div>
-            <h3 className="font-bold text-xl">10K+ Users</h3>
-            <p className="text-white/70">Active flatmate seekers</p>
-          </div>
-
-          <div className="p-6 hover:shadow-[0_0_10px_rgba(0,140,204,0.5)] rounded-2xl space-y-3 transition-all duration-300 hover:-translate-y-2 md:translate-y-8 bg-black/5 backdrop-blur-md border border-white/20 shadow-lg">
-            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-              <Home className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-bold text-xl">5K+ Listings</h3>
-            <p className="text-white/70">Available properties</p>
-          </div>
-
-          <div className="p-6 hover:shadow-[0_0_10px_rgba(0,140,204,0.5)] rounded-2xl space-y-3 transition-all duration-300 hover:-translate-y-2 bg-black/5 backdrop-blur-md border border-white/20 shadow-lg">
-            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-              <Search className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-bold text-xl">Smart Match</h3>
-            <p className="text-white/70">AI-powered compatibility</p>
-          </div>
+          ))}
         </div>
 
-        {/* Features Section */}
+        {/* Sections */}
         <Features />
-
-        {/* Steps Section */}
-
         <Steps />
-
-        {/* Ready Section */}
-
         <Ready />
+      </section>
 
-      </div>
-      <footer className="py-8 px-4 text-center text-[#72a8b7]">
-        <div className="container mx-auto">
-          <p>© 2024 Flatmate. All rights reserved.</p>
-        </div>
+      <footer className="mt-16 py-6 text-center text-[#72a8b7] border-t border-white/10 bg-black/10 backdrop-blur-sm">
+        © 2024 Flatmate. All rights reserved.
       </footer>
     </div>
   );
