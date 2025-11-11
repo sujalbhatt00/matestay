@@ -8,10 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 // Fallback Featured Properties (if API fails or user logged out without location)
-// It's better to fetch these from backend, but keep a small fallback
 const fallbackFeaturedProperties = [
-    // Add 1-2 sample property objects here if you want a visual fallback
-    // Example:
     // { _id: "prop1", title: "Sample Room", location: "Anytown", rent: 5000, bedrooms: 1, bathrooms: 1, photos: [], propertyType: "Room", availableFrom: new Date() },
 ];
 
@@ -22,14 +19,13 @@ const Home = () => {
   const [isLoadingRoommates, setIsLoadingRoommates] = useState(true);
 
   // State for Properties
-  const [propertyListings, setPropertyListings] = useState(fallbackFeaturedProperties.slice(0, 6)); // Initialize with fallback
+  const [propertyListings, setPropertyListings] = useState(fallbackFeaturedProperties.slice(0, 6));
   const [propertyTitle, setPropertyTitle] = useState("Featured Properties");
   const [isLoadingProperties, setIsLoadingProperties] = useState(true);
 
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    // Wait for auth context to load
     if (authLoading) {
       setIsLoadingRoommates(true);
       setIsLoadingProperties(true);
@@ -40,39 +36,43 @@ const Home = () => {
       setIsLoadingRoommates(true);
       setIsLoadingProperties(true);
 
+      // --- Fetch Roommates ---
       try {
-        // --- Fetch Roommates ---
+        let fetchedRoommates = [];
         if (user && user.location) {
           setRoommateTitle(`Roommates Near ${user.location.split(',')[0]}`);
           const roommateParams = new URLSearchParams({ location: user.location, limit: 6 });
           const roommateRes = await axios.get(`/user/search?${roommateParams.toString()}`);
           if (roommateRes.data.length > 0) {
-            setRoommateListings(roommateRes.data);
+            fetchedRoommates = roommateRes.data;
           } else {
-            // No roommates nearby, fetch featured instead
-             setRoommateTitle("Featured Roommates");
-             const featuredRoommatesRes = await axios.get('/user/featured?limit=6'); // Assuming a featured route exists
-             setRoommateListings(featuredRoommatesRes.data);
+            setRoommateTitle("Featured Roommates");
+            const featuredRoommatesRes = await axios.get('/user/featured?limit=6');
+            fetchedRoommates = featuredRoommatesRes.data;
           }
         } else {
-          // Logged out: Fetch featured roommates
           setRoommateTitle("Featured Roommates");
-          // Ensure your backend has a /user/featured route similar to properties/featured
-          // For now, let's assume it exists and handles limit
           const featuredRoommatesRes = await axios.get('/user/featured?limit=6');
-          setRoommateListings(featuredRoommatesRes.data);
+          fetchedRoommates = featuredRoommatesRes.data;
         }
+        
+        // --- FIX: Filter out the current user from the fetched list ---
+        if (user) {
+          setRoommateListings(fetchedRoommates.filter(r => r._id !== user._id));
+        } else {
+          setRoommateListings(fetchedRoommates);
+        }
+
       } catch (err) {
         console.error("Failed to fetch roommate listings", err);
         setRoommateTitle("Featured Roommates");
-        // Use a static fallback if API fails? For now, empty.
         setRoommateListings([]);
       } finally {
         setIsLoadingRoommates(false);
       }
 
+      // --- Fetch Properties ---
       try {
-        // --- Fetch Properties ---
         if (user && user.location) {
           setPropertyTitle(`Properties Near ${user.location.split(',')[0]}`);
           const propertyParams = new URLSearchParams({ location: user.location, limit: 6 });
@@ -80,21 +80,19 @@ const Home = () => {
            if (propertyRes.data.length > 0) {
               setPropertyListings(propertyRes.data);
            } else {
-             // No properties nearby, fetch featured instead
              setPropertyTitle("Featured Properties");
-             const featuredPropsRes = await axios.get('/properties/search?limit=6'); // Fetch any 6 properties
+             const featuredPropsRes = await axios.get('/properties/search?limit=6');
              setPropertyListings(featuredPropsRes.data);
            }
         } else {
-          // Logged out: Fetch featured properties
           setPropertyTitle("Featured Properties");
-          const featuredPropsRes = await axios.get('/properties/search?limit=6'); // Fetch any 6 properties
+          const featuredPropsRes = await axios.get('/properties/search?limit=6');
           setPropertyListings(featuredPropsRes.data);
         }
       } catch (err) {
         console.error("Failed to fetch property listings", err);
         setPropertyTitle("Featured Properties");
-        setPropertyListings(fallbackFeaturedProperties.slice(0, 6)); // Use static fallback on error
+        setPropertyListings(fallbackFeaturedProperties.slice(0, 6));
       } finally {
         setIsLoadingProperties(false);
       }
@@ -102,7 +100,7 @@ const Home = () => {
 
     fetchAllListings();
 
-  }, [user, authLoading]); // Re-run when auth state changes
+  }, [user, authLoading]);
 
   return (
     <div>
@@ -114,15 +112,14 @@ const Home = () => {
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       ) : (
-        // Pass roommate data to ListingsSection
         <ListingsSection
           listings={roommateListings}
           title={roommateTitle}
         />
       )}
 
-      {/* --- NEW Property Listings Section --- */}
-      <section id="property-listings" className="py-16 bg-secondary/30"> {/* Different background */}
+      {/* --- Property Listings Section --- */}
+      <section id="property-listings" className="py-16 bg-secondary/30">
          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
            <div className="text-center mb-12">
              <h2 className="text-3xl font-bold mb-4">{propertyTitle}</h2>
@@ -148,7 +145,6 @@ const Home = () => {
            )}
          </div>
       </section>
-      {/* --- END NEW Section --- */}
 
       <Footer />
     </div>
