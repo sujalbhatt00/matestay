@@ -1,56 +1,85 @@
 import Conversation from "../models/Conversation.js";
-import Message from "../models/Message.js"; // <-- IMPORT MESSAGE
+import Message from "../models/Message.js";
 
-// Create a new conversation (No changes)
+// Create or return existing conversation
 export const newConversation = async (req, res) => {
+  const senderId = req.user.id; // from authMiddleware
   const { receiverId } = req.body;
-  const senderId = req.user.id;
+
+  if (!receiverId) {
+    return res.status(400).json({ message: "Receiver ID is required." });
+  }
+
+  // --- FIX: Prevent self-conversation ---
+  if (senderId === receiverId) {
+    return res.status(400).json({ message: "You cannot create a conversation with yourself." });
+  }
 
   try {
-    let existingConversation = await Conversation.findOne({
+    // Check if a conversation already exists between these two users
+    const existingConvo = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },
-    });
+    }).populate("members", "name profilePic");
 
-    if (existingConversation) {
-      return res.status(200).json(existingConversation);
+    if (existingConvo) {
+      return res.status(200).json(existingConvo);
     }
 
-    const newConversation = new Conversation({
+    // If not, create a new one
+    const newConvo = new Conversation({
       members: [senderId, receiverId],
     });
 
-    const savedConversation = await newConversation.save();
-    res.status(201).json(savedConversation);
+    const savedConvo = await newConvo.save();
+    const populatedConvo = await Conversation.findById(savedConvo._id).populate(
+      "members",
+      "name profilePic"
+    );
+
+    res.status(201).json(populatedConvo);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in newConversation:", error);
+    res.status(500).json({ message: "Server error while creating conversation." });
   }
 };
 
-// --- THIS FUNCTION IS UPDATED ---
+// Get Conversations for a user
 export const getConversations = async (req, res) => {
   try {
-    // 1. Find conversations, sorted by most recent activity
     const conversations = await Conversation.find({
       members: { $in: [req.user.id] },
     })
-    .populate("members", "name profilePic")
-    .sort({ updatedAt: -1 }); // <-- Sort by the timestamp we added
+      .populate("members", "name profilePic")
+      .sort({ updatedAt: -1 });
 
-    // 2. Attach the last message to each conversation
+    // --- FIX: Filter out any potential self-conversations from the results ---
+    const validConversations = conversations.filter(c => {
+        const otherMembers = c.members.filter(m => m._id.toString() !== req.user.id);
+        return otherMembers.length > 0;
+    });
+
+    // Add last message to each conversation
     const conversationsWithLastMessage = await Promise.all(
-      conversations.map(async (convo) => {
+      validConversations.map(async (convo) => {
         const lastMessage = await Message.findOne({
           conversationId: convo._id,
-        }).sort({ createdAt: -1 }); // Find the most recent message
-
-        const convoObject = convo.toObject(); // Convert to plain object
-        convoObject.lastMessage = lastMessage; // Attach the message (or null)
-        return convoObject;
+        }).sort({ createdAt: -1 });
+        return {
+          ...convo.toObject(),
+          lastMessage: lastMessage ? lastMessage.text : "No messages yet",
+          lastMessageTimestamp: lastMessage ? lastMessage.createdAt : convo.updatedAt,
+        };
       })
+    );
+
+    // Sort again by the actual last message timestamp
+    conversationsWithLastMessage.sort((a, b) => 
+        new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)
     );
 
     res.status(200).json(conversationsWithLastMessage);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in getConversations:", error);
+    res.status(500).json({ message: "Server error while fetching conversations." });
   }
 };

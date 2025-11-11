@@ -1,84 +1,64 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom'; // <-- IMPORT
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import TimeAgo from 'react-timeago';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-const ConvoList = ({ conversations, currentChat, setCurrentChat, onlineUsers }) => {
+const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
   const { user } = useAuth();
-  const navigate = useNavigate(); // <-- INITIALIZE
 
-  const handleConvoClick = (convo) => {
-    setCurrentChat(convo); // This updates the "active" highlight
-    navigate(`/chat/${convo._id}`); // This changes the URL to show the chat
-  };
+  if (!conversations || conversations.length === 0) {
+    return <div className="p-4 text-center text-muted-foreground">No conversations yet.</div>;
+  }
 
   return (
-    <div className="flex flex-col h-full text-foreground">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <h2 className="text-xl font-bold">Chats</h2>
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b">
+        <h2 className="text-xl font-bold">Messages</h2>
       </div>
+      <div className="flex-grow overflow-y-auto">
+        {conversations.map((convo) => {
+          // --- FIX: Find the other member, not yourself ---
+          const otherMember = convo.members.find(
+            (member) => member._id !== user._id
+          );
 
-      {/* Search Bar */}
-      <div className="p-3 border-b border-border">
-        <div className="relative">
-          <Input 
-            type="text" 
-            placeholder="Search chats..." 
-            className="pl-9 rounded-lg"
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        </div>
-      </div>
+          // --- FIX: If there's no other member, it's a self-chat, so don't render it ---
+          if (!otherMember) {
+            return null;
+          }
 
-      {/* Conversation Items */}
-      <div className="flex-grow overflow-y-auto custom-scrollbar">
-        {conversations.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            You don't have any chats yet.
-          </div>
-        ) : (
-          conversations.map((convo) => {
-            const otherMember = convo.members.find(m => m._id !== user._id);
-            if (!otherMember) return null;
+          const isSelected = convo._id === currentChatId;
 
-            const isOnline = onlineUsers.some(u => u.userId === otherMember._id);
-            const isActive = currentChat?._id === convo._id;
-
-            return (
-              <div
-                key={convo._id}
-                onClick={() => handleConvoClick(convo)} // <-- USE NEW HANDLER
-                className={`flex items-center gap-3 p-3 cursor-pointer 
-                            border-b border-border last:border-b-0
-                            hover:bg-accent transition-colors duration-200
-                            ${isActive ? 'bg-secondary' : ''}`}
-              >
-                <div className="relative">
-                  <img
-                    src={otherMember.profilePic || defaultAvatar}
-                    alt={otherMember.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                  {isOnline && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"></span>
+          return (
+            <div
+              key={convo._id}
+              onClick={() => onSelectConversation(convo)}
+              className={`flex items-center p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
+                isSelected ? 'bg-muted' : ''
+              }`}
+            >
+              <Avatar className="h-12 w-12 mr-4">
+                <AvatarImage src={otherMember.profilePic || defaultAvatar} alt={otherMember.name} />
+                <AvatarFallback>{otherMember.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex-grow overflow-hidden">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold truncate">{otherMember.name}</h3>
+                  {convo.lastMessageTimestamp && (
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">
+                      <TimeAgo date={convo.lastMessageTimestamp} minPeriod={60} />
+                    </p>
                   )}
                 </div>
-                <div className="flex-1 overflow-hidden">
-                  <h3 className="font-semibold truncate">{otherMember.name}</h3>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {convo.lastMessage ? 
-                      (convo.lastMessage.senderId === user._id ? "You: " : "") + convo.lastMessage.text 
-                      : "No messages yet"}
-                  </p> 
-                </div>
+                <p className="text-sm text-muted-foreground truncate">
+                  {convo.lastMessage}
+                </p>
               </div>
-            );
-          })
-        )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
