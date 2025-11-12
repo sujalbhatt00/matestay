@@ -10,7 +10,12 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
 
     // --- Profile fields ---
-    gender: { type: String, enum: ["Male", "Female", "Other"] },
+    // --- THIS IS THE CHANGE: Expanded gender options ---
+    gender: { 
+      type: String, 
+      enum: ["Male", "Female", "Non-binary", "Transgender", "Prefer not to say", "Other"] 
+    },
+    // --- END CHANGE ---
     age: { type: Number },
     location: { type: String },
     budget: { type: Number },
@@ -18,6 +23,14 @@ const userSchema = new mongoose.Schema(
     lifestyle: [String],
     bio: { type: String, maxlength: 200 },
     profileSetupComplete: { type: Boolean, default: false },
+
+    // --- THIS IS THE CHANGE: New "Looking For" field ---
+    lookingFor: {
+      type: String,
+      enum: ["Male", "Female", "Non-binary", "Transgender", "Any", "Other"],
+      default: 'Any',
+    },
+    // --- END CHANGE ---
 
     // --- NEW PREMIUM SUBSCRIPTION FIELDS ---
     isPremium: {

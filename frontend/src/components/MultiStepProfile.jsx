@@ -1,289 +1,220 @@
-// frontend/src/components/MultiStepProfile.jsx
-
-import React, { useEffect, useState, useRef } from "react"; // <-- Import useRef
-import axios from "../api/axiosInstance";
+import React, { useState, useRef } from 'react';
+import axios from '@/api/axiosInstance';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LocationCombobox } from "@/components/ui/LocationCombobox"; 
-import { OccupationCombobox } from "@/components/ui/OccupationCombobox";
-import { Loader2 } from "lucide-react"; // <-- For loading spinner
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LocationCombobox } from './ui/LocationCombobox';
+import { OccupationCombobox } from './ui/OccupationCombobox';
+import { Loader2, Upload, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { toast } from "sonner";
 
-// A working default avatar
-const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
+const lifestyleOptions = ["Early Bird", "Night Owl", "Quiet", "Social", "Vegetarian", "Non-Vegetarian", "Non-Smoker", "Smoker", "Pet-Friendly"];
+const genderOptions = ["Male", "Female", "Non-binary", "Transgender", "Prefer not to say", "Other"];
+const lookingForOptions = ["Any", "Male", "Female", "Non-binary", "Transgender", "Other"];
 
-// --- Step 1 Component (NOW INCLUDES FILE UPLOAD) ---
-const Step1_Basics = ({ data, setData }) => {
+export default function MultiStepProfile({ initialData, onSaved }) {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: initialData.name || '',
+    phone: initialData.phone || '',
+    age: initialData.age || '',
+    gender: initialData.gender || '',
+    lookingFor: initialData.lookingFor || 'Any', // <-- Add new field
+    location: initialData.location || '',
+    occupation: initialData.occupation || '',
+    budget: initialData.budget || '',
+    bio: initialData.bio || '',
+    lifestyle: initialData.lifestyle || [],
+    profilePic: initialData.profilePic || '',
+  });
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null); // Ref to hidden file input
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
 
-  const handleFileChange = async (event) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLifestyleToggle = (tag) => {
+    setFormData(prev => ({
+      ...prev,
+      lifestyle: prev.lifestyle.includes(tag)
+        ? prev.lifestyle.filter(t => t !== tag)
+        : [...prev.lifestyle, tag]
+    }));
+  };
+
+  const handlePhotoUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     setIsUploading(true);
-    
-    // Get Cloudinary credentials from .env
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", uploadPreset);
-
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', file);
+    uploadFormData.append('upload_preset', uploadPreset);
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-      
-      if (result.secure_url) {
-        // Set the new image URL in our form data
-        setData({ ...data, profilePic: result.secure_url });
-      } else {
-        throw new Error("Upload failed");
-      }
+      const res = await fetch(url, { method: 'POST', body: uploadFormData });
+      const data = await res.json();
+      setFormData(prev => ({ ...prev, profilePic: data.secure_url }));
+      toast.success("Profile picture updated!");
     } catch (error) {
-      console.error("Error uploading image:", error);
-      alert("Image upload failed. Please try again.");
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  return (
-    <div className="space-y-3">
-      
-      {/* --- NEW PROFILE PIC UPLOADER --- */}
-      <label className="block text-sm">Profile Picture</label>
-      <div className="flex items-center gap-4">
-        <img
-          src={data.profilePic || defaultAvatar}
-          alt="Profile"
-          className="w-20 h-20 rounded-full object-cover border-2 border-border"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => fileInputRef.current.click()} // Trigger hidden input
-          disabled={isUploading}
-        >
-          {isUploading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : null}
-          {isUploading ? "Uploading..." : "Change Picture"}
-        </Button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden" // Hide the default ugly input
-          accept="image/png, image/jpeg, image/jpg"
-        />
-      </div>
-      {/* --- END OF UPLOADER --- */}
-
-      <label className="block text-sm pt-4">Full name</label>
-      <Input value={data.name || ""} onChange={(e) => setData({ ...data, name: e.target.value })} />
-      
-      <label className="block text-sm mt-2">Phone Number</label>
-      <Input 
-        type="tel" 
-        placeholder="e.g. 9876543210"
-        value={data.phone || ""} 
-        onChange={(e) => setData({ ...data, phone: e.target.value })} 
-      />
-
-      <label className="block text-sm mt-2">Age</label>
-      <Input type="number" value={data.age || ""} onChange={(e) => setData({ ...data, age: e.target.value })} />
-      <label className="block text-sm mt-2">Gender</label>
-      <select 
-        value={data.gender || ""} 
-        onChange={(e) => setData({ ...data, gender: e.target.value })} 
-        className="w-full p-2 border rounded bg-transparent"
-      >
-        <option value="">Select</option>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-  );
-};
-
-// --- Step 2 Component (No changes) ---
-const Step2_Lifestyle = ({ data, setData }) => {
-  const toggleTag = (tag) => {
-    const set = new Set(data.lifestyle || []);
-    if (set.has(tag)) set.delete(tag);
-    else set.add(tag);
-    setData({ ...data, lifestyle: Array.from(set) });
-  };
-  const tags = ["Non-smoker", "Pet-friendly", "Vegetarian", "Night Owl", "Early Bird", "Clean", "Social"];
-  return (
-    <div className="space-y-3">
-      <label className="block text-sm">Lifestyle (choose multiple)</label>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((t) => {
-          const active = (data.lifestyle || []).includes(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => toggleTag(t)}
-              className={`px-3 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground" : "bg-transparent hover:bg-accent"}`}
-            >
-              {t}
-            </button>
-          );
-        })}
-      </div>
-      <label className="block text-sm mt-3">Short bio</label>
-      <textarea 
-        value={data.bio || ""} 
-        onChange={(e) => setData({ ...data, bio: e.target.value })} 
-        className="w-full p-2 border rounded bg-transparent"
-        maxLength={200} 
-      />
-    </div>
-  );
-};
-
-// --- Step 3 Component (No changes) ---
-const Step3_BudgetLocation = ({ data, setData }) => (
-  <div className="space-y-3">
-    <label className="block text-sm">Location (city / area)</label>
-    <LocationCombobox
-      value={data.location || ""}
-      onChange={(value) => {
-        setData({ ...data, location: value });
-      }}
-    />
-    <label className="block text-sm mt-2">Monthly budget (INR)</label>
-    <Input type="number" value={data.budget || ""} onChange={(e) => setData({ ...data, budget: e.target.value })} />
-    <label className="block text-sm mt-2">Occupation</label>
-    <OccupationCombobox
-      value={data.occupation || ""}
-      onChange={(value) => {
-        setData({ ...data, occupation: value });
-      }}
-    />
-  </div>
-);
-
-// --- Step 4 Component (No changes) ---
-const Step4_Preview = ({ data }) => (
-  <div className="space-y-3">
-    <h3 className="font-semibold">Preview</h3>
-    {/* Added image preview */}
-    <img src={data.profilePic || defaultAvatar} alt="Preview" className="w-16 h-16 rounded-full object-cover" />
-    <p><strong>Name:</strong> {data.name}</p>
-    <p><strong>Phone:</strong> {data.phone}</p>
-    <p><strong>Age:</strong> {data.age}</p>
-    <p><strong>Gender:</strong> {data.gender}</p>
-    <p><strong>Location:</strong> {data.location}</p>
-    <p><strong>Budget:</strong> {data.budget}</p>
-    <p><strong>Occupation:</strong> {data.occupation}</p>
-    <p><strong>Lifestyle:</strong> {(data.lifestyle || []).join(", ")}</p>
-    <p><strong>Bio:</strong> {data.bio}</p>
-  </div>
-);
-
-// --- Main Profile Component ---
-export default function MultiStepProfile({ initialData = {}, onSaved = () => {} }) {
-  const [step, setStep] = useState(0);
-  const [data, setData] = useState({
-    name: initialData?.name || "",
-    phone: initialData?.phone || "", 
-    age: initialData?.age || "",
-    gender: initialData?.gender || "",
-    location: initialData?.location || "",
-    budget: initialData?.budget || "",
-    occupation: initialData?.occupation || "",
-    lifestyle: initialData?.lifestyle || [],
-    bio: initialData?.bio || "",
-    profilePic: initialData?.profilePic || "",
-  });
-
-  useEffect(() => {
-    // When initialData changes (e.g., after login), update the form data
-    setData({
-      name: initialData?.name || "",
-      phone: initialData?.phone || "", 
-      age: initialData?.age || "",
-      gender: initialData?.gender || "",
-      location: initialData?.location || "",
-      budget: initialData?.budget || "",
-      occupation: initialData?.occupation || "",
-      lifestyle: initialData?.lifestyle || [],
-      bio: initialData?.bio || "",
-      profilePic: initialData?.profilePic || "",
-    });
-  }, [initialData]);
-
-  const steps = [
-    { id: 0, title: "Basics", component: <Step1_Basics data={data} setData={setData} /> },
-    { id: 1, title: "Lifestyle", component: <Step2_Lifestyle data={data} setData={setData} /> },
-    { id: 2, title: "Preferences", component: <Step3_BudgetLocation data={data} setData={setData} /> },
-    { id: 3, title: "Preview", component: <Step4_Preview data={data} /> },
-  ];
-
-  const saveProfile = async () => {
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
-      // The payload now includes the profilePic URL
-      const payload = {
-        name: data.name,
-        phone: data.phone,
-        age: data.age,
-        gender: data.gender,
-        location: data.location,
-        budget: Number(data.budget) || 0,
-        occupation: data.occupation,
-        lifestyle: data.lifestyle,
-        bio: data.bio,
-        profilePic: data.profilePic, // This is now the Cloudinary URL
-      };
-      const response = await axios.put("/user/update", payload);
-      alert("Profile saved");
-      onSaved(response.data.user); // Pass the updated user back
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to save profile");
+      await axios.put('/user/update', formData);
+      toast.success("Profile saved successfully!");
+      onSaved();
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+      toast.error("Could not save profile. Please check your information.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const nextStep = () => setStep(s => Math.min(s + 1, 3));
+  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+
   return (
-    <div className="bg-card p-6 rounded-lg border border-border shadow">
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Step {step + 1} / {steps.length}: {steps[step].title}</h2>
-          <div className="text-sm text-muted-foreground">{step === steps.length - 1 ? "Ready to save" : "Fill details"}</div>
-        </div>
-        <div className="w-full bg-border rounded-full h-2 mt-3 overflow-hidden">
-          <div className="h-2 bg-primary" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
-        </div>
+    <div className="bg-card p-6 md:p-10 rounded-lg border shadow-lg max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-2">Set Up Your Profile</h1>
+      <p className="text-muted-foreground mb-6">Complete your profile to start connecting with roommates.</p>
+      
+      <div className="mb-6 flex items-center gap-4">
+        <div className={`flex-1 h-1 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`}></div>
+        <div className={`flex-1 h-1 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-muted'}`}></div>
+        <div className={`flex-1 h-1 rounded-full ${step >= 3 ? 'bg-primary' : 'bg-muted'}`}></div>
       </div>
 
-      <div className="mb-6">
-        {steps[step].component}
-      </div>
-
-      <div className="flex justify-between">
-        <div>
-          {step > 0 && <Button variant="ghost" onClick={() => setStep((s) => s - 1)}>Back</Button>}
+      {step === 1 && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Step 1: Personal Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="age">Age</Label>
+              <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} />
+            </div>
+            {/* --- THIS IS THE CHANGE: Gender Select --- */}
+            <div>
+              <Label>Gender *</Label>
+              <Select name="gender" value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)} required>
+                <SelectTrigger><SelectValue placeholder="Select your gender" /></SelectTrigger>
+                <SelectContent>
+                  {genderOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* --- END CHANGE --- */}
+          </div>
+          <div>
+            <Label>Profile Picture</Label>
+            <div className="flex items-center gap-4 mt-2">
+              <img src={formData.profilePic || "https://i.imgur.com/6VBx3io.png"} alt="Avatar" className="w-20 h-20 rounded-full object-cover border" />
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current.click()} disabled={isUploading}>
+                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                {isUploading ? 'Uploading...' : 'Upload Photo'}
+              </Button>
+              <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="flex gap-2">
-          {step < steps.length - 1 && (
-            <Button onClick={() => setStep((s) => Math.min(s + 1, steps.length - 1))}>
-              Next
-            </Button>
-          )}
-          {step === steps.length - 1 && (
-            <Button onClick={saveProfile} className="bg-[#5b5dda] hover:bg-[#4a4ab5]">Save Profile</Button>
-          )}
+      {step === 2 && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Step 2: Roommate Preferences</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Location *</Label>
+              <LocationCombobox value={formData.location} onChange={(value) => handleSelectChange('location', value)} />
+            </div>
+            <div>
+              <Label>Occupation</Label>
+              <OccupationCombobox value={formData.occupation} onChange={(value) => handleSelectChange('occupation', value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="budget">Monthly Budget (₹)</Label>
+              <Input id="budget" name="budget" type="number" value={formData.budget} onChange={handleChange} />
+            </div>
+            {/* --- THIS IS THE CHANGE: Looking For Select --- */}
+            <div>
+              <Label>Looking for a Roommate Who Is</Label>
+              <Select name="lookingFor" value={formData.lookingFor} onValueChange={(value) => handleSelectChange('lookingFor', value)}>
+                <SelectTrigger><SelectValue placeholder="Select gender preference" /></SelectTrigger>
+                <SelectContent>
+                  {lookingForOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* --- END CHANGE --- */}
+          </div>
+          <div>
+            <Label>Lifestyle</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {lifestyleOptions.map(tag => (
+                <Button key={tag} type="button" variant={formData.lifestyle.includes(tag) ? 'default' : 'outline'} size="sm" onClick={() => handleLifestyleToggle(tag)}>
+                  {tag}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
+      )}
+
+      {step === 3 && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Step 3: About You</h2>
+          <div>
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell us a bit about yourself, your habits, and what you're looking for in a roommate." rows={5} maxLength={200} />
+            <p className="text-xs text-muted-foreground mt-1">{200 - formData.bio.length} characters remaining</p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-8 pt-6 border-t flex justify-between">
+        <Button type="button" variant="outline" onClick={prevStep} disabled={step === 1}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+        </Button>
+        {step < 3 ? (
+          <Button type="button" onClick={nextStep}>
+            Next <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
+          </Button>
+        )}
       </div>
     </div>
   );
-}
+};

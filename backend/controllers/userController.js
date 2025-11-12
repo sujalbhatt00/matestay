@@ -9,6 +9,7 @@ export const updateProfile = async (req, res) => {
     const {
       name, phone, gender, age, location,
       budget, occupation, lifestyle, bio, profilePic,
+      lookingFor, // <-- THIS IS THE CHANGE: Get the new field from the request
     } = req.body;
 
     user.name = name || user.name;
@@ -21,11 +22,13 @@ export const updateProfile = async (req, res) => {
     user.lifestyle = lifestyle || user.lifestyle;
     user.bio = bio || user.bio;
     user.profilePic = profilePic || user.profilePic;
+    user.lookingFor = lookingFor || user.lookingFor; // <-- THIS IS THE CHANGE: Save the new field
     user.profileSetupComplete = true;
 
     const updatedUser = await user.save();
     res.json({ message: "Profile updated successfully", user: updatedUser });
   } catch (error) {
+    console.error("Error updating profile:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -106,7 +109,6 @@ export const getFeaturedUsers = async (req, res) => {
 // --- GET ALL USERS (with filtering) ---
 export const getAllUsers = async (req, res) => {
   try {
-   -
     const { gender } = req.query;
 
     const query = {
@@ -114,7 +116,6 @@ export const getAllUsers = async (req, res) => {
       _id: { $ne: req.user.id } 
     };
 
-    // --- THIS IS THE CHANGE: Add gender to the query if it exists and is not 'Any' ---
     if (gender && gender !== 'Any') {
       query.gender = gender;
     }

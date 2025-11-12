@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MapPin, DollarSign, User, Calendar, Phone, List } from 'lucide-react';
+import { Mail, MapPin, DollarSign, User, Calendar, Phone, List, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
@@ -17,13 +17,12 @@ export default function ViewProfile({ user, onEdit }) {
     budget,
     phone,
     lifestyle = [],
-    profilePic
+    profilePic,
+    lookingFor, // <-- Get the new field
   } = user || {};
 
   return (
     <div className="bg-card p-6 md:p-10 rounded-lg border border-border shadow-lg max-w-3xl mx-auto">
-
-      {/* --- Header Section --- */}
       <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
         <img
           src={profilePic || defaultAvatar}
@@ -39,25 +38,20 @@ export default function ViewProfile({ user, onEdit }) {
             </p>
           )}
         </div>
-        {/* --- Action Buttons --- */}
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">
-           {/* --- THIS IS THE FIX --- */}
            <Button asChild variant="outline" className="w-full sm:w-auto">
              <Link to="/my-listings">
-               {/* Wrap icon and text in a span */}
                <span className="flex items-center">
                  <List className="w-4 h-4 mr-2" /> My Listings
                </span>
              </Link>
            </Button>
-           {/* --- END FIX --- */}
-           <Button onClick={onEdit} className="w-full sm:w-auto bg-[#5b5dda] hover:bg-[#4a4ab5]">
+           <Button onClick={onEdit} className="w-full sm:w-auto">
              Edit Profile
            </Button>
         </div>
       </div>
 
-      {/* --- Details Grid --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-background p-4 rounded-lg border">
           <h3 className="text-lg font-semibold mb-3">About Me</h3>
@@ -81,10 +75,15 @@ export default function ViewProfile({ user, onEdit }) {
             <DollarSign className="w-4 h-4 text-primary" />
             <strong>Budget:</strong> {budget ? `₹${budget}` : 'Not set'}
           </p>
+          {/* --- THIS IS THE CHANGE: Display "Looking For" --- */}
+          <p className="flex items-center text-sm gap-2">
+            <Search className="w-4 h-4 text-primary" />
+            <strong>Looking for:</strong> {lookingFor || 'Any'}
+          </p>
+          {/* --- END CHANGE --- */}
         </div>
       </div>
 
-      {/* --- Lifestyle Section --- */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Lifestyle</h3>
         {lifestyle.length > 0 ? (
@@ -97,7 +96,6 @@ export default function ViewProfile({ user, onEdit }) {
           <p className="text-muted-foreground text-sm">No lifestyle tags selected.</p>
         )}
       </div>
-
     </div>
   );
 }

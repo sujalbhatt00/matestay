@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Mail, MapPin, DollarSign, User, Calendar, Phone, MessageSquare } from 'lucide-react';
+import { Loader2, Mail, MapPin, DollarSign, User, Calendar, Phone, MessageSquare, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -72,7 +72,7 @@ const PublicProfilePage = () => {
     );
   }
 
-  const { name, occupation, location, bio, age, gender, budget, lifestyle = [], profilePic } = profile;
+  const { name, occupation, location, bio, age, gender, budget, lifestyle = [], profilePic, lookingFor } = profile;
 
   return (
     <div className="container mx-auto px-4 py-12 pt-28">
@@ -85,7 +85,7 @@ const PublicProfilePage = () => {
             {location && <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center sm:justify-start gap-1"><MapPin className="w-4 h-4" /> {location}</p>}
           </div>
           {loggedInUser && loggedInUser._id !== userId && (
-            <Button onClick={handleStartChat} disabled={isStartingChat} className="w-full sm:w-auto bg-[#5b5dda] hover:bg-[#4a4ab5]">
+            <Button onClick={handleStartChat} disabled={isStartingChat}>
               {isStartingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
               {isStartingChat ? 'Starting...' : 'Message'}
             </Button>
@@ -101,6 +101,9 @@ const PublicProfilePage = () => {
             <p className="flex items-center text-sm gap-2"><User className="w-4 h-4 text-primary" /><strong>Gender:</strong> {gender || 'Not set'}</p>
             <p className="flex items-center text-sm gap-2"><Calendar className="w-4 h-4 text-primary" /><strong>Age:</strong> {age || 'Not set'}</p>
             <p className="flex items-center text-sm gap-2"><DollarSign className="w-4 h-4 text-primary" /><strong>Budget:</strong> {budget ? `₹${budget}` : 'Not set'}</p>
+            {/* --- THIS IS THE CHANGE: Display "Looking For" --- */}
+            <p className="flex items-center text-sm gap-2"><Search className="w-4 h-4 text-primary" /><strong>Looking for:</strong> {lookingFor || 'Any'}</p>
+            {/* --- END CHANGE --- */}
           </div>
         </div>
         <div>
