@@ -103,13 +103,25 @@ export const getFeaturedUsers = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION TO GET ALL USERS ---
+// --- GET ALL USERS (with filtering) ---
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({
-      profileSetupComplete: true, // Only show users with complete profiles
-      _id: { $ne: req.user.id } // Exclude the current user
-    }).select("-password").sort({ createdAt: -1 }); // Exclude password and sort by newest
+   -
+    const { gender } = req.query;
+
+    const query = {
+      profileSetupComplete: true, 
+      _id: { $ne: req.user.id } 
+    };
+
+    // --- THIS IS THE CHANGE: Add gender to the query if it exists and is not 'Any' ---
+    if (gender && gender !== 'Any') {
+      query.gender = gender;
+    }
+
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ createdAt: -1 }); // Exclude password and sort by newest
 
     res.json(users);
   } catch (error) {

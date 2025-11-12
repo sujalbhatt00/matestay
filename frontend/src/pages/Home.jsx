@@ -29,13 +29,13 @@ const Home = () => {
     <div>
       <Hero />
       
-      {/* This will now render correctly */}
+      {}
       <ListingsSection />
       
-      {/* Featured Roommates Section */}
+      {}
       <section className="py-12 bg-secondary">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-8">Featured Roommates</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">Featured users</h2>
           {loadingRoommates ? (
             <div className="flex justify-center">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -48,7 +48,7 @@ const Home = () => {
             </div>
           )}
           {(!loadingRoommates && featuredRoommates.length === 0) && (
-            <p className="text-center text-muted-foreground">No featured roommates found at the moment.</p>
+            <p className="text-center text-muted-foreground">No featured users found at the moment.</p>
           )}
         </div>
       </section>
