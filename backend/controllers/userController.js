@@ -44,11 +44,10 @@ export const getUserProfile = async (req, res) => {
 // --- Get Another User's Public Profile ---
 export const getPublicUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select("-password"); // Find by ID from URL
+    const user = await User.findById(req.params.userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    // Return the public-safe user data
     res.json(user);
   } catch (error) {
     console.error("Error fetching public user profile:", error);
@@ -93,15 +92,28 @@ export const searchUsers = async (req, res) => {
 // --- Get Featured Users for Homepage ---
 export const getFeaturedUsers = async (req, res) => {
   try {
-    // Use MongoDB aggregation to get random users
     const users = await User.aggregate([
-      { $match: { profileSetupComplete: true } }, // Only get users with complete profiles
-      { $sample: { size: 6 } }, // Get 6 random documents
-      { $project: { password: 0 } } // Remove the password
+      { $match: { profileSetupComplete: true } },
+      { $sample: { size: 6 } },
+      { $project: { password: 0 } }
     ]);
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// --- NEW FUNCTION TO GET ALL USERS ---
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({
+      profileSetupComplete: true, // Only show users with complete profiles
+      _id: { $ne: req.user.id } // Exclude the current user
+    }).select("-password").sort({ createdAt: -1 }); // Exclude password and sort by newest
 
     res.json(users);
   } catch (error) {
+    console.error("Error fetching all users:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

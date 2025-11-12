@@ -17,13 +17,14 @@ import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import { Toaster } from "@/components/ui/sonner";
 import FloatingChatButton from './components/FloatingChatButton';
+// --- THIS IS THE FIX ---
+// The import path is corrected to match your actual filename: "FindRoommate.jsx"
+import FindRoommatesPage from '@/pages/FindRoommate'; 
+// --- END FIX ---
 
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
-  // --- THIS IS THE FIX ---
-  // The /chat route is removed from this array, so the Navbar and Footer will now appear on the chat page.
   const noNavFooterPaths = []; 
-  // --- END FIX ---
   const showLayout = !noNavFooterPaths.some(path => location.pathname.startsWith(path));
 
   return (
@@ -50,6 +51,8 @@ function App() {
               <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
               <Route element={<ProtectedRoute />}>
+                <Route path="/find-roommates" element={<FindRoommatesPage />} />
+                
                 <Route path="/create-listing" element={<CreatePropertyPage />} />
                 <Route path="/edit-listing/:id" element={<EditPropertyPage />} />
                 <Route path="/my-listings" element={<MyListingsPage />} />

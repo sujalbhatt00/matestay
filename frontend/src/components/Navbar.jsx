@@ -1,11 +1,11 @@
 import React, { useContext, useState } from "react";
-import { Moon, Sun, Menu, X, MessageSquare, Building2, PlusCircle } from "lucide-react";
+import { Moon, Sun, Menu, X, MessageSquare, Users, PlusCircle } from "lucide-react"; // Changed Building2 to Users
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
 import { useNavigate, NavLink } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { useChat } from "../context/ChatContext"; // <-- IMPORT useChat
+import { useChat } from "../context/ChatContext";
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -14,18 +14,18 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { user, logout } = useContext(AuthContext);
-  const { notifications } = useChat(); // <-- GET NOTIFICATIONS
+  const { notifications } = useChat();
   const navigate = useNavigate();
 
   const toggleMenu = () => setIsMenuOpen((s) => !s);
 
   const getNavLinkClass = ({ isActive }) =>
-    `flex items-center gap-1 text-sm font-medium transition-colors relative ${ // <-- ADD 'relative'
+    `flex items-center gap-1 text-sm font-medium transition-colors relative ${
       isActive ? 'text-primary' : 'hover:text-primary'
     }`;
 
   const getMobileNavLinkClass = ({ isActive }) =>
-    `text-lg font-medium w-full text-center p-2 rounded-md relative ${ // <-- ADD 'relative'
+    `text-lg font-medium w-full text-center p-2 rounded-md relative ${
       isActive ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent'
     }`;
 
@@ -42,10 +42,11 @@ const Navbar = () => {
             </div>
 
             <div className="hidden md:flex items-center gap-6">
-              <NavLink to="/properties" className={getNavLinkClass}>
-                 <Building2 className="h-4 w-4 mr-1" /> Browse Rooms
+              {/* --- THIS IS THE CHANGE --- */}
+              <NavLink to="/find-roommates" className={getNavLinkClass}>
+                 <Users className="h-4 w-4 mr-1" /> Find Roommates
               </NavLink>
-              {/* --- THIS IS THE FIX --- */}
+              {/* --- END CHANGE --- */}
               <NavLink to="/chat" className={getNavLinkClass}>
                  <MessageSquare className="h-4 w-4 mr-1" /> Messages
                  {unreadCount > 0 && (
@@ -54,7 +55,6 @@ const Navbar = () => {
                    </span>
                  )}
               </NavLink>
-              {/* --- END FIX --- */}
 
               <Button
                 variant="ghost"
@@ -107,8 +107,8 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 top-24 z-40 bg-background/95 backdrop-blur-sm p-6">
           <div className="flex flex-col items-center gap-6">
-            <NavLink to="/properties" onClick={toggleMenu} className={getMobileNavLinkClass}>
-              Browse Rooms
+            <NavLink to="/find-roommates" onClick={toggleMenu} className={getMobileNavLinkClass}>
+              Find Roommates
             </NavLink>
             <NavLink to="/chat" onClick={toggleMenu} className={getMobileNavLinkClass}>
               Messages
