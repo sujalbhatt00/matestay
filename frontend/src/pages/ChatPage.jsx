@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from '@/api/axiosInstance';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useChat } from '@/context/ChatContext';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -8,88 +7,42 @@ import ChatBox from '../components/Chat/ChatBox';
 import { Loader2 } from 'lucide-react';
 
 const ChatPage = () => {
-  const [conversations, setConversations] = useState([]);
+  const { loading: authLoading } = useAuth();
+  // --- ALL STATE NOW COMES FROM THE CONTEXT ---
+  const { conversations, loadingConversations, removeNotification } = useChat();
   const [currentChat, setCurrentChat] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const { user, loading: authLoading } = useAuth();
-  const { removeNotification } = useChat();
   const { conversationId } = useParams();
   const navigate = useNavigate();
 
-  const fetchConversations = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await axios.get('/conversations');
-      const fetchedConversations = res.data || [];
-      setConversations(fetchedConversations);
-      
-      if (conversationId) {
-        const activeChat = fetchedConversations.find(c => c._id === conversationId);
-        if (activeChat) {
-          setCurrentChat(activeChat);
-          removeNotification(conversationId);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch conversations:", error);
-      setConversations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, conversationId, removeNotification]);
-
+  // Effect to set the current chat based on URL
   useEffect(() => {
-    if (!authLoading) {
-      fetchConversations();
-    }
-  }, [authLoading, fetchConversations]);
-
-  // --- THIS IS THE CRITICAL FIX ---
-  // This function now correctly handles real-time message updates.
-  const handleNewMessage = useCallback((message) => {
-    setConversations(prevConvos => {
-      const convoIndex = prevConvos.findIndex(c => c._id === message.conversationId);
-      
-      // If the conversation exists, update it and move it to the top.
-      if (convoIndex > -1) {
-        const updatedConvo = { 
-          ...prevConvos[convoIndex], 
-          lastMessage: message.text, 
-          lastMessageTimestamp: message.createdAt || new Date().toISOString() 
-        };
-        const otherConvos = prevConvos.filter(c => c._id !== message.conversationId);
-        return [updatedConvo, ...otherConvos];
-      } else {
-        // If it's a new conversation, refetch the entire list to get all details.
-        // This is a safe fallback to ensure the UI is always correct.
-        fetchConversations();
-        return prevConvos;
+    if (conversationId && conversations.length > 0) {
+      const activeChat = conversations.find(c => c._id === conversationId);
+      if (activeChat) {
+        setCurrentChat(activeChat);
+        removeNotification(conversationId);
       }
-    });
-  }, [fetchConversations]);
+    } else {
+      setCurrentChat(null);
+    }
+  }, [conversationId, conversations, removeNotification]);
 
   const handleSelectConversation = (conversation) => {
-    setCurrentChat(conversation);
-    removeNotification(conversation._id);
     navigate(`/chat/${conversation._id}`);
   };
 
   if (authLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-background">
+      <div className="flex justify-center items-center h-[calc(100vh-4rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="flex h-[calc(100vh-4rem)] bg-background">
       <div className={`w-full md:w-1/3 lg:w-1/4 border-r ${conversationId ? 'hidden md:flex' : 'flex'} flex-col`}>
-        {loading ? (
+        {loadingConversations ? (
           <div className="flex justify-center items-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -105,7 +58,6 @@ const ChatPage = () => {
         <ChatBox
           key={currentChat?._id}
           currentChat={currentChat}
-          onNewMessage={handleNewMessage}
           hasConversations={conversations.length > 0}
         />
       </div>

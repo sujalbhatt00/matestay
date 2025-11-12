@@ -1,10 +1,11 @@
 import React, { useContext, useState } from "react";
-import { Moon, Sun, Home, Menu, X, MessageSquare, Building2, PlusCircle } from "lucide-react"; // Removed 'Search' icon import
+import { Moon, Sun, Menu, X, MessageSquare, Building2, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
 import { useNavigate, NavLink } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext"; // <-- IMPORT useChat
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -13,47 +14,48 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { user, logout } = useContext(AuthContext);
+  const { notifications } = useChat(); // <-- GET NOTIFICATIONS
   const navigate = useNavigate();
 
   const toggleMenu = () => setIsMenuOpen((s) => !s);
 
   const getNavLinkClass = ({ isActive }) =>
-    `flex items-center gap-1 text-sm font-medium transition-colors ${
+    `flex items-center gap-1 text-sm font-medium transition-colors relative ${ // <-- ADD 'relative'
       isActive ? 'text-primary' : 'hover:text-primary'
     }`;
 
   const getMobileNavLinkClass = ({ isActive }) =>
-    `text-lg font-medium w-full text-center p-2 rounded-md ${
+    `text-lg font-medium w-full text-center p-2 rounded-md relative ${ // <-- ADD 'relative'
       isActive ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent'
     }`;
 
+  const unreadCount = notifications.length;
 
   return (
     <>
       <nav className="fixed top-4 w-[95%] md:w-[90%] left-1/2 -translate-x-1/2 z-50 bg-background/70 backdrop-blur-sm border border-border rounded-2xl">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
               <img className="cursor-pointer" src="/Logo.png" width={70} alt="Matestay" />
               <span className="text-xl font-bold">Matestay</span>
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-6">
-              {/* --- UPDATED LINKS (Removed Search) --- */}
-              {/* <NavLink to="/search" className={getNavLinkClass}>
-                 <Search className="h-4 w-4 mr-1" /> Find Roommates
-              </NavLink> */}
               <NavLink to="/properties" className={getNavLinkClass}>
                  <Building2 className="h-4 w-4 mr-1" /> Browse Rooms
               </NavLink>
+              {/* --- THIS IS THE FIX --- */}
               <NavLink to="/chat" className={getNavLinkClass}>
                  <MessageSquare className="h-4 w-4 mr-1" /> Messages
+                 {unreadCount > 0 && (
+                   <span className="absolute -top-2 -right-3 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                     {unreadCount > 9 ? '9+' : unreadCount}
+                   </span>
+                 )}
               </NavLink>
-              {/* --- END UPDATED LINKS --- */}
+              {/* --- END FIX --- */}
 
-              {/* Theme Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -63,13 +65,12 @@ const Navbar = () => {
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
 
-              {/* Post Listing & Auth Section */}
               {user ? (
                 <div className="flex items-center gap-3">
                    <Button
                      size="sm"
                      className="bg-primary/10 text-primary hover:bg-primary/20"
-                     onClick={() => navigate('/properties/new')} // We'll create this page next
+                     onClick={() => navigate('/create-listing')}
                    >
                      <PlusCircle className="h-4 w-4 mr-1" /> Post Listing
                    </Button>
@@ -86,7 +87,6 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center">
                <Button
                 variant="ghost"
@@ -104,30 +104,28 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 top-24 z-40 bg-background/95 backdrop-blur-sm p-6">
           <div className="flex flex-col items-center gap-6">
-            {/* --- UPDATED MOBILE LINKS (Removed Search) --- */}
-            {/* <NavLink to="/search" onClick={toggleMenu} className={getMobileNavLinkClass}>
-              Find Roommates
-            </NavLink> */}
             <NavLink to="/properties" onClick={toggleMenu} className={getMobileNavLinkClass}>
               Browse Rooms
             </NavLink>
             <NavLink to="/chat" onClick={toggleMenu} className={getMobileNavLinkClass}>
               Messages
+              {unreadCount > 0 && (
+                   <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                     {unreadCount}
+                   </span>
+                 )}
             </NavLink>
-            {/* --- END UPDATED MOBILE LINKS --- */}
 
-            {/* Mobile Post Listing & Auth */}
             <div className="flex items-center gap-6 mt-4">
               {user ? (
                 <div className="flex items-center gap-3">
                   <Button
                      size="sm"
                      className="bg-primary/10 text-primary hover:bg-primary/20 mr-2"
-                     onClick={() => { toggleMenu(); navigate('/properties/new'); }}
+                     onClick={() => { toggleMenu(); navigate('/create-listing'); }}
                    >
                      Post Listing
                    </Button>

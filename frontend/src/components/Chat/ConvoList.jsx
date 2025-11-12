@@ -10,7 +10,7 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
   const { user } = useAuth();
   const { onlineUsers, notifications } = useChat();
 
-  if (!user) return null; // Don't render if user is not available
+  if (!user) return null;
 
   return (
     <div className="flex flex-col h-full bg-card border-r">
@@ -25,7 +25,6 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
         ) : (
           conversations.map((convo) => {
             if (!convo || !convo.members) return null;
-
             const otherMember = convo.members.find((m) => m && m._id !== user._id);
             if (!otherMember) return null;
 
@@ -45,9 +44,7 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
                     <AvatarImage src={otherMember.profilePic || defaultAvatar} alt={otherMember.name} />
                     <AvatarFallback>{otherMember.name ? otherMember.name.charAt(0).toUpperCase() : '?'}</AvatarFallback>
                   </Avatar>
-                  {isOnline && (
-                    <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
-                  )}
+                  {isOnline && <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />}
                 </div>
                 <div className="flex-grow overflow-hidden">
                   <div className="flex justify-between items-center">
@@ -60,9 +57,7 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
                     <p className={`text-sm truncate ${isUnread ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
                       {convo.lastMessage}
                     </p>
-                    {isUnread && (
-                      <span className="block h-2.5 w-2.5 rounded-full bg-primary ml-2 flex-shrink-0"></span>
-                    )}
+                    {isUnread && <span className="block h-2.5 w-2.5 rounded-full bg-primary ml-2 flex-shrink-0"></span>}
                   </div>
                 </div>
               </div>

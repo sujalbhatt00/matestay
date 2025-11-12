@@ -1,30 +1,36 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 
 const FloatingChatButton = () => {
+  const { user } = useAuth();
   const { notifications } = useChat();
   const navigate = useNavigate();
-  
-  // Count unique senders for the notification badge
-  const notificationCount = new Set(notifications.map(n => n.senderId)).size;
+
+  // Don't render the button if the user is not logged in
+  if (!user) {
+    return null;
+  }
+
+  const unreadCount = notifications.length;
 
   return (
-    <button
+    <Button
       onClick={() => navigate('/chat')}
-      className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-[#5b5dda] text-white shadow-lg flex items-center justify-center hover:bg-[#4a4ab5] transition-transform duration-200 hover:scale-110"
-      aria-label="Open chats"
+      className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-40 bg-[#5b5dda] hover:bg-[#4a4ab5]"
+      size="icon"
+      aria-label="Open Messages"
     >
-      <MessageSquare className="w-7 h-7" />
-      
-      {/* Red notification dot */}
-      {notificationCount > 0 && (
-        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold border-2 border-card">
-          {notificationCount}
+      <MessageSquare className="h-8 w-8" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+          {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}
-    </button>
+    </Button>
   );
 };
 

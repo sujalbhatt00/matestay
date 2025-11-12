@@ -9,17 +9,21 @@ import CreatePropertyPage from './pages/CreatePropertyPage';
 import EditPropertyPage from './pages/EditPropertyPage';
 import MyListingsPage from './pages/MyListingsPage';
 import Profile from './pages/Profile';
-import PublicProfilePage from './pages/PublicProfilePage'; // <-- IMPORT THE NEW PAGE
+import PublicProfilePage from './pages/PublicProfilePage';
 import ChatPage from './pages/ChatPage';
 import VerifyEmail from './pages/VerifyEmail';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import { Toaster } from "@/components/ui/sonner";
+import FloatingChatButton from './components/FloatingChatButton';
 
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
-  const noNavFooterPaths = ['/chat'];
+  // --- THIS IS THE FIX ---
+  // The /chat route is removed from this array, so the Navbar and Footer will now appear on the chat page.
+  const noNavFooterPaths = []; 
+  // --- END FIX ---
   const showLayout = !noNavFooterPaths.some(path => location.pathname.startsWith(path));
 
   return (
@@ -27,6 +31,7 @@ const LayoutWrapper = ({ children }) => {
       {showLayout && <Navbar />}
       <main className={showLayout ? "pt-16" : ""}>{children}</main>
       {showLayout && <Footer />}
+      {showLayout && <FloatingChatButton />}
     </>
   );
 };
@@ -42,13 +47,13 @@ function App() {
               <Route path="/properties" element={<PropertiesPage />} />
               <Route path="/properties/:id" element={<PropertyDetailPage />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/profile/:userId" element={<PublicProfilePage />} /> {/* <-- ADD THE NEW PUBLIC PROFILE ROUTE */}
+              <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/create-listing" element={<CreatePropertyPage />} />
                 <Route path="/edit-listing/:id" element={<EditPropertyPage />} />
                 <Route path="/my-listings" element={<MyListingsPage />} />
-                <Route path="/profile" element={<Profile />} /> {/* This is for the logged-in user */}
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/chat" element={<ChatPage />} />
                 <Route path="/chat/:conversationId" element={<ChatPage />} />
               </Route>

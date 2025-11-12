@@ -11,9 +11,9 @@ import ChatMessage from './ChatMessage';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-const ChatBox = ({ currentChat, onNewMessage, hasConversations }) => {
+const ChatBox = ({ currentChat, hasConversations }) => {
   const { user } = useAuth();
-  const { socket } = useChat();
+  const { socket, setConversations } = useChat(); // Get setConversations to update list
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -22,9 +22,10 @@ const ChatBox = ({ currentChat, onNewMessage, hasConversations }) => {
 
   const otherMember = currentChat?.members.find(m => m._id !== user._id);
 
+  // Effect to fetch messages ONLY when the chat changes
   useEffect(() => {
     if (!currentChat?._id) {
-      setMessages([]); // Clear messages if no chat is selected
+      setMessages([]);
       return;
     }
     const fetchMessages = async () => {
@@ -41,21 +42,17 @@ const ChatBox = ({ currentChat, onNewMessage, hasConversations }) => {
     fetchMessages();
   }, [currentChat]);
 
+  // Effect to handle incoming socket messages for THIS chat
   useEffect(() => {
     if (!socket) return;
-    const handleNewMessage = (message) => {
+    const handleIncomingMessage = (message) => {
       if (currentChat && message.conversationId === currentChat._id) {
         setMessages((prev) => [...prev, message]);
-        if (typeof onNewMessage === 'function') {
-          onNewMessage(message);
-        }
       }
     };
-    socket.on("getMessage", handleNewMessage);
-    return () => {
-      socket.off("getMessage", handleNewMessage);
-    };
-  }, [socket, currentChat, onNewMessage]);
+    socket.on("getMessage", handleIncomingMessage);
+    return () => socket.off("getMessage", handleIncomingMessage);
+  }, [socket, currentChat]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -64,27 +61,33 @@ const ChatBox = ({ currentChat, onNewMessage, hasConversations }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !otherMember) return;
-    const messagePayload = {
-      conversationId: currentChat._id,
-      text: newMessage,
-    };
+
+    const messagePayload = { conversationId: currentChat._id, text: newMessage };
     const socketMessage = {
       senderId: user._id,
       receiverId: otherMember._id,
       text: newMessage,
       conversationId: currentChat._id,
+      createdAt: new Date().toISOString(),
     };
-    try {
-      const { data: savedMessage } = await axios.post('/messages', messagePayload);
-      socket.emit("sendMessage", socketMessage);
-      setMessages((prev) => [...prev, savedMessage]);
-      if (typeof onNewMessage === 'function') {
-        onNewMessage(savedMessage);
-      }
-      setNewMessage("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    }
+
+    socket.emit("sendMessage", socketMessage);
+    setMessages((prev) => [...prev, socketMessage]);
+    setNewMessage("");
+
+    // Manually update the conversation list in the context for an instant update
+    setConversations(prevConvos => {
+        const convoIndex = prevConvos.findIndex(c => c._id === socketMessage.conversationId);
+        const updatedConvo = { 
+          ...prevConvos[convoIndex], 
+          lastMessage: socketMessage.text, 
+          lastMessageTimestamp: socketMessage.createdAt
+        };
+        const otherConvos = prevConvos.filter(c => c._id !== socketMessage.conversationId);
+        return [updatedConvo, ...otherConvos];
+    });
+
+    await axios.post('/messages', messagePayload);
   };
 
   if (!currentChat) {
@@ -113,21 +116,17 @@ const ChatBox = ({ currentChat, onNewMessage, hasConversations }) => {
         </Avatar>
         <h3 className="font-semibold text-foreground">{otherMember?.name}</h3>
       </div>
-
       <div className="flex-grow p-4 overflow-y-auto">
         {isLoadingMessages ? (
-          <div className="flex justify-center items-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg._id || Math.random()} ref={scrollRef}>
+          messages.map((msg, index) => (
+            <div key={msg._id || `local-${index}`} ref={scrollRef}>
               <ChatMessage message={msg} isOwnMessage={msg.senderId === user._id} />
             </div>
           ))
         )}
       </div>
-
       <div className="p-4 border-t bg-background">
         <form onSubmit={handleSubmit} className="flex items-center space-x-3">
           <Input
@@ -138,9 +137,7 @@ const ChatBox = ({ currentChat, onNewMessage, hasConversations }) => {
             className="flex-grow bg-muted border-muted-foreground/20 focus-visible:ring-primary"
             autoComplete="off"
           />
-          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-            <Send className="h-5 w-5" />
-          </Button>
+          <Button type="submit" size="icon" disabled={!newMessage.trim()}><Send className="h-5 w-5" /></Button>
         </form>
       </div>
     </div>
