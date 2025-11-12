@@ -1,46 +1,66 @@
-import RoommateCard from "./RoommateCard";
+import React, { useState, useEffect } from 'react';
+import axios from '@/api/axiosInstance';
+import PropertyCard from './PropertyCard';
+import { Loader2 } from 'lucide-react';
+import { Button } from './ui/button';
+import { useNavigate } from 'react-router-dom';
 
-// This component is now "dumb" - it just displays what it's given.
-const ListingsSection = ({ listings, title }) => {
-  
+const ListingsSection = () => {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchFeaturedProperties = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch featured properties, limiting to 4 for the homepage
+        const res = await axios.get('/properties/featured?limit=4');
+        setProperties(res.data);
+      } catch (err) {
+        console.error('Failed to fetch featured properties:', err);
+        setError('Could not load properties at the moment. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProperties();
+  }, []);
+
   return (
-    <section id="listings" className="py-16 bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">{title}</h2>
-          
-          {/* Show count only if listings are provided */}
-          {listings && listings.length > 0 && (
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Found {listings.length} matching roommate(s).
-            </p>
-          )}
-        </div>
+    <section className="py-12">
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-8">Featured Properties</h2>
+        
+        {loading && (
+          <div className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
 
-        {/* Handle "No Results" case */}
-        {listings && listings.length === 0 ? (
-          <div className="text-center py-10">
-            <h3 className="text-2xl font-semibold">No Results Found</h3>
-            <p className="text-muted-foreground mt-2">
-              Try a different location or check back later.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {listings && listings.map((listing) => (
-              <RoommateCard 
-                key={listing._id}
-                userId={listing._id} // <-- THIS IS THE NEW PROP
-                name={listing.name}
-                age={listing.age}
-                occupation={listing.occupation}
-                location={listing.location}
-                budget={listing.budget}
-                avatarUrl={listing.profilePic}
-                tags={listing.lifestyle || []}
-              />
-            ))}
-          </div>
+        {error && (
+          <p className="text-center text-red-500">{error}</p>
+        )}
+
+        {!loading && !error && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {properties.map(property => (
+                <PropertyCard key={property._id} property={property} />
+              ))}
+            </div>
+            {properties.length === 0 && (
+              <p className="text-center text-muted-foreground">No featured properties available right now.</p>
+            )}
+            <div className="text-center mt-12">
+              <Button onClick={() => navigate('/properties')}>
+                View All Properties
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </section>

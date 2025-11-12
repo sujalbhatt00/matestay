@@ -1,102 +1,75 @@
-import { MapPin, DollarSign } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom"; // <-- IMPORT
-import axios from "../api/axiosInstance"; // <-- IMPORT
-import { useAuth } from "../context/AuthContext"; // <-- IMPORT
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from '@/api/axiosInstance';
+import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { MessageSquare, Loader2, User } from 'lucide-react';
+import { toast } from "sonner"; // This line was missing or incorrect in the previous version.
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-const RoommateCard = ({
-  userId, // <-- GET THE NEW PROP
-  name,
-  age,
-  occupation,
-  location,
-  budget,
-  tags,
-  avatarUrl,
-}) => {
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("");
-
-  const navigate = useNavigate();
+const RoommateCard = ({ roommate }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   const handleStartChat = async () => {
     if (!user) {
-      alert("Please log in to start a chat.");
+      toast.error("Please log in to start a chat.");
       return;
     }
 
+    if (user._id === roommate._id) {
+      toast.info("You cannot start a chat with yourself.");
+      return;
+    }
+
+    setIsStartingChat(true);
     try {
-      // Call the API to create or find the conversation
-      const res = await axios.post("/conversations", {
-        receiverId: userId,
+      const res = await axios.post('/conversations', {
+        receiverId: roommate._id,
       });
-      // The API returns the conversation object. Navigate to the chat page.
+      
       navigate(`/chat/${res.data._id}`);
     } catch (err) {
-      console.error("Failed to start conversation", err);
-      alert("Could not start chat.");
+      console.error("Failed to start chat:", err);
+      toast.error("Could not start chat. Please try again later.");
+    } finally {
+      setIsStartingChat(false);
     }
   };
 
+  if (!roommate) {
+    return null;
+  }
+
   return (
-    <Card className="group hover:shadow-large transition-all duration-300 hover:-translate-y-1 border-border flex flex-col">
-      <CardContent className="p-6 flex-grow">
-        <div className="flex items-start gap-4 mb-4">
-          <Avatar className="h-16 w-16 ring-2 ring-primary/10">
-            <AvatarImage src={avatarUrl || defaultAvatar} alt={name} />
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-1">
-              {name}, {age || 'N/A'}
-            </h3>
-            <p className="text-sm text-muted-foreground">{occupation || 'N/A'}</p>
-          </div>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>{location || 'N/A'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <DollarSign className="h-4 w-4" />
-            <span>{budget ? `₹${budget}/month` : 'N/A'}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {tags && tags.length > 0 ? (
-            tags.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))
-          ) : (
-            <Badge variant="outline" className="text-xs">No tags</Badge>
-          )}
+    <Card className="w-full max-w-sm overflow-hidden transition-transform transform hover:-translate-y-1">
+      <CardContent className="p-4 text-center">
+        <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/20">
+          <AvatarImage src={roommate.profilePic || defaultAvatar} alt={roommate.name} />
+          <AvatarFallback>{roommate.name ? roommate.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+        </Avatar>
+        <h3 className="text-lg font-semibold text-foreground">{roommate.name}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{roommate.occupation || 'Student'}</p>
+        
+        <div className="flex justify-center space-x-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${roommate._id}`)}>
+            <User className="mr-2 h-4 w-4" />
+            View Profile
+          </Button>
+          <Button size="sm" onClick={handleStartChat} disabled={isStartingChat}>
+            {isStartingChat ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <MessageSquare className="mr-2 h-4 w-4" />
+            )}
+            {isStartingChat ? 'Starting...' : 'Message'}
+          </Button>
         </div>
       </CardContent>
-
-      <CardFooter className="p-6 pt-0">
-        <Button 
-          onClick={handleStartChat} // <-- ADD ONCLICK
-          className="w-full bg-[#5b5dda] text-white hover:bg-[#4a4ab5] cursor-pointer"
-        >
-          Message {name.split(' ')[0]}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

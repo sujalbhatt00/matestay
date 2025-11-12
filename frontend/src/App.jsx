@@ -1,65 +1,63 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import { ChatProvider } from "./context/ChatContext";
-import { useAuth } from "./context/AuthContext";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import VerifyEmail from "./pages/VerifyEmail";
-import Profile from "./pages/Profile";
-import SearchResults from "./pages/SearchResults"; // <-- IMPORTED (Roommate Search)
-import PropertiesPage from "./pages/PropertiesPage";
-import PropertyDetailPage from "./pages/PropertyDetailPage";
-import CreatePropertyPage from "./pages/CreatePropertyPage";
-import MyListingsPage from "./pages/MyListingsPage";
-import EditPropertyPage from "./pages/EditPropertyPage";
-import ChatPage from "./pages/ChatPage";
-import FloatingChatButton from "./components/FloatingChatButton";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import PropertiesPage from './pages/PropertiesPage';
+import PropertyDetailPage from './pages/PropertyDetailPage';
+import CreatePropertyPage from './pages/CreatePropertyPage';
+import EditPropertyPage from './pages/EditPropertyPage';
+import MyListingsPage from './pages/MyListingsPage';
+import Profile from './pages/Profile';
+import PublicProfilePage from './pages/PublicProfilePage'; // <-- IMPORT THE NEW PAGE
+import ChatPage from './pages/ChatPage';
+import VerifyEmail from './pages/VerifyEmail';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+import { ChatProvider } from './context/ChatContext';
+import { Toaster } from "@/components/ui/sonner";
 
-const AppContent = () => {
-  const { user } = useAuth();
+const LayoutWrapper = ({ children }) => {
   const location = useLocation();
-  const isOnChatPage = location.pathname.startsWith('/chat');
+  const noNavFooterPaths = ['/chat'];
+  const showLayout = !noNavFooterPaths.some(path => location.pathname.startsWith(path));
 
   return (
     <>
-      <Navbar />
-      <Routes>
-        {/* --- Public Routes --- */}
-        <Route path="/" element={<Home />} />
-        <Route path="/verify/:token" element={<VerifyEmail />} />
-        <Route path="/properties" element={<PropertiesPage />} />
-        <Route path="/properties/:id" element={<PropertyDetailPage />} />
-        {/* --- ADD THIS ROUTE BACK --- */}
-        <Route path="/search" element={<SearchResults />} /> {/* Roommate Search */}
-        {/* --- END ADD --- */}
-
-        {/* --- Protected Routes --- */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/chat/:conversationId" element={<ChatPage />} />
-          <Route path="/properties/new" element={<CreatePropertyPage />} />
-          <Route path="/my-listings" element={<MyListingsPage />} />
-          <Route path="/properties/edit/:id" element={<EditPropertyPage />} />
-        </Route>
-
-      </Routes>
-      {user && !isOnChatPage && <FloatingChatButton />}
+      {showLayout && <Navbar />}
+      <main className={showLayout ? "pt-16" : ""}>{children}</main>
+      {showLayout && <Footer />}
     </>
   );
-}
+};
 
 function App() {
   return (
-    <AuthProvider>
-      <ChatProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </ChatProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <ChatProvider>
+          <LayoutWrapper>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/properties" element={<PropertiesPage />} />
+              <Route path="/properties/:id" element={<PropertyDetailPage />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/profile/:userId" element={<PublicProfilePage />} /> {/* <-- ADD THE NEW PUBLIC PROFILE ROUTE */}
+
+              <Route element={<ProtectedRoute />}>
+                <Route path="/create-listing" element={<CreatePropertyPage />} />
+                <Route path="/edit-listing/:id" element={<EditPropertyPage />} />
+                <Route path="/my-listings" element={<MyListingsPage />} />
+                <Route path="/profile" element={<Profile />} /> {/* This is for the logged-in user */}
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/chat/:conversationId" element={<ChatPage />} />
+              </Route>
+            </Routes>
+          </LayoutWrapper>
+          <Toaster richColors />
+        </ChatProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

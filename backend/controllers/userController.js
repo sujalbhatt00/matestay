@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 
-// --- updateProfile FUNCTION (No changes) ---
+// --- Update Logged-in User's Profile ---
 export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -30,7 +30,7 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// --- getUserProfile FUNCTION (No changes) ---
+// --- Get Logged-in User's Profile ---
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -41,7 +41,22 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-// --- searchUsers FUNCTION (No changes) ---
+// --- Get Another User's Public Profile ---
+export const getPublicUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select("-password"); // Find by ID from URL
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    // Return the public-safe user data
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching public user profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// --- Search for Users (Roommates) ---
 export const searchUsers = async (req, res) => {
   try {
     const { location, maxBudget, gender, limit } = req.query; 
@@ -75,10 +90,10 @@ export const searchUsers = async (req, res) => {
   }
 };
 
-// --- NEW getFeaturedUsers FUNCTION ---
+// --- Get Featured Users for Homepage ---
 export const getFeaturedUsers = async (req, res) => {
   try {
-    // Use MongoDB aggregation to get 6 random users
+    // Use MongoDB aggregation to get random users
     const users = await User.aggregate([
       { $match: { profileSetupComplete: true } }, // Only get users with complete profiles
       { $sample: { size: 6 } }, // Get 6 random documents
