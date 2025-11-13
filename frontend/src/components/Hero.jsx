@@ -1,29 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LocationCombobox } from "@/components/ui/LocationCombobox";
 import heroImage from "../assets/hero-image.jpg"; 
-import { useNavigate } from "react-router-dom"; // <-- Import useNavigate
-import { useAuth } from "../context/AuthContext"; // <-- Import useAuth
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import axios from "@/api/axiosInstance";
 
 const Hero = () => { 
   const [location, setLocation] = useState("");
-  const navigate = useNavigate(); // <-- Initialize the hook
-  const { user } = useAuth(); // <-- Get user for the login check
+  const [stats, setStats] = useState({
+    totalListings: 0,
+    totalUsers: 0,
+  });
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get('/properties/stats');
+        setStats(response.data);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+        setStats({
+          totalListings: 0,
+          totalUsers: 0,
+        });
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  // ✅ UPDATED: Navigate to location search page (shows both properties and users)
   const handleSubmit = (e) => {
     e.preventDefault(); 
     
-    if (!user) {
-      alert("Please log in to search for roommates.");
-      // You could also open your login modal here
-      return;
+    if (!location.trim()) {
+      return; // Don't search if location is empty
     }
     
-    if (location) {
-      // Redirect to the new search page with the location as a query parameter
-      navigate(`/search?location=${encodeURIComponent(location)}`);
-    }
+    // Navigate to location search page with location parameter
+    navigate(`/search?location=${encodeURIComponent(location)}`);
   };
 
   return (
@@ -68,7 +87,8 @@ const Hero = () => {
           </form>
 
           <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-            <span>🏠 10,000+ Listings</span>
+            <span>🏠 {stats.totalListings > 0 ? `${stats.totalListings.toLocaleString()}+` : '0'} Listings</span>
+            <span>👥 {stats.totalUsers > 0 ? `${stats.totalUsers.toLocaleString()}+` : '0'} Users</span>
             <span>✓ Verified Profiles</span>
             <span>💬 Instant Messaging</span>
           </div>

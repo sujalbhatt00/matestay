@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import axios from '@/api/axiosInstance';
 import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Loader2, Sparkles, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import axios from '@/api/axiosInstance';
+import { Loader2, Check, Crown, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 const PremiumPage = () => {
   const { user, refreshUser } = useAuth();
@@ -14,14 +14,30 @@ const PremiumPage = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const navigate = useNavigate();
 
+  // ✅ UPDATED: New pricing structure
   const plans = [
+    {
+      id: 'free',
+      name: 'Free Plan',
+      price: 0,
+      duration: 'Forever',
+      features: [
+        'Create basic profile',
+        'Browse properties',
+        '10 messages per conversation',
+        'Basic search filters',
+        'View public profiles',
+      ],
+      isCurrent: !user?.isPremium,
+      disabled: true,
+    },
     {
       id: 'monthly',
       name: 'Monthly Premium',
-      price: 299,
+      price: 1,
       duration: '1 Month',
       features: [
-        'Unlimited property listings',
+        'Unlimited messaging',
         'Priority customer support',
         'Featured profile on search',
         'Advanced search filters',
@@ -32,9 +48,9 @@ const PremiumPage = () => {
     {
       id: 'yearly',
       name: 'Yearly Premium',
-      price: 2999,
+      price: 10,
       duration: '12 Months',
-      savings: 'Save ₹589',
+      savings: 'Save ₹2',
       features: [
         'Everything in Monthly',
         'Save 17% with annual billing',
@@ -64,6 +80,8 @@ const PremiumPage = () => {
   };
 
   const handleSubscribe = async (plan) => {
+    if (plan.disabled) return;
+    
     if (!user) {
       toast.error('Please log in to subscribe');
       navigate('/');
@@ -75,7 +93,6 @@ const PremiumPage = () => {
     setLoading(true);
 
     try {
-      // Load Razorpay script
       console.log('📥 Loading Razorpay script...');
       const scriptLoaded = await loadRazorpayScript();
       
@@ -86,7 +103,6 @@ const PremiumPage = () => {
         return;
       }
 
-      // Create order
       console.log('📤 Creating payment order for plan:', plan.id);
       const { data: orderData } = await axios.post('/payments/create-order', {
         plan: plan.id,
@@ -102,7 +118,6 @@ const PremiumPage = () => {
         throw new Error('Failed to create payment order');
       }
 
-      // Razorpay options
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,
@@ -111,23 +126,21 @@ const PremiumPage = () => {
         description: `${plan.name} Subscription`,
         order_id: orderData.orderId,
         handler: async (response) => {
-          console.log('✅ Payment successful:', response);
-          setLoading(true);
-          
           try {
-            console.log('🔄 Verifying payment...');
-            await axios.post('/payments/verify', {
+            console.log('✅ Payment successful:', response.razorpay_payment_id);
+            const verifyData = await axios.post('/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
 
-            toast.success('🎉 Payment successful! You are now a premium member!');
+            console.log('✅ Payment verified:', verifyData.data);
+            toast.success('Payment successful! Welcome to Premium!');
             await refreshUser();
             navigate('/profile');
           } catch (error) {
             console.error('❌ Payment verification failed:', error);
-            toast.error('Payment verification failed. Please contact support with your payment ID.');
+            toast.error('Payment verification failed. Please contact support.');
           } finally {
             setLoading(false);
             setSelectedPlan(null);
@@ -156,17 +169,12 @@ const PremiumPage = () => {
         }
       };
 
-      console.log('🚀 Opening Razorpay checkout with options:', {
-        key: orderData.keyId?.substring(0, 10) + '...',
-        amount: orderData.amount,
-        order_id: orderData.orderId
-      });
-
+      console.log('🚀 Opening Razorpay checkout');
       const paymentObject = new window.Razorpay(options);
       
       paymentObject.on('payment.failed', function (response) {
         console.error('❌ Payment failed:', response.error);
-        toast.error(`Payment failed: ${response.error.description || 'Unknown error'}`);
+        toast.error(`Payment failed: ${response.error.description}`);
         setLoading(false);
         setSelectedPlan(null);
       });
@@ -211,24 +219,29 @@ const PremiumPage = () => {
       <div className="text-center mb-12">
         <div className="flex justify-center items-center gap-2 mb-4">
           <Sparkles className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold">Go Premium</h1>
+          <h1 className="text-4xl font-bold">Choose Your Plan</h1>
         </div>
         <p className="text-lg text-muted-foreground">
           Unlock exclusive features and find your perfect roommate faster
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
         {plans.map((plan) => (
           <Card
             key={plan.id}
             className={`relative ${
               plan.popular ? 'border-primary shadow-lg scale-105' : ''
-            }`}
+            } ${plan.isCurrent ? 'border-green-500' : ''}`}
           >
             {plan.popular && (
               <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary">
                 Most Popular
+              </Badge>
+            )}
+            {plan.isCurrent && (
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500">
+                Current Plan
               </Badge>
             )}
             <CardHeader>
@@ -254,15 +267,17 @@ const PremiumPage = () => {
               </ul>
               <Button
                 onClick={() => handleSubscribe(plan)}
-                disabled={loading}
+                disabled={loading || plan.disabled}
                 className="w-full"
-                variant={plan.popular ? 'default' : 'outline'}
+                variant={plan.popular ? 'default' : plan.disabled ? 'secondary' : 'outline'}
               >
                 {loading && selectedPlan === plan.id ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
+                ) : plan.disabled ? (
+                  'Current Plan'
                 ) : (
                   'Subscribe Now'
                 )}

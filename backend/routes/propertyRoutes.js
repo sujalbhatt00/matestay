@@ -6,6 +6,7 @@ import {
    getFeaturedProperties,
   getUserProperties, // Make sure this is imported
   updateProperty,
+   getPropertyStats,
   deleteProperty,
 } from "../controllers/propertyController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -17,6 +18,7 @@ router.get("/search", searchProperties); // Search listings (public)
 router.get("/my-listings", protect, getUserProperties); // Get user's listings (protected)
 router.post("/", protect, createProperty); // Create a new listing (protected)
 router.get("/featured", getFeaturedProperties); // Get featured listings (public)
+router.get("/stats", getPropertyStats); // Get property statistics (public)
 // --- Define dynamic ':id' routes AFTER specific ones ---
 router.get("/:id", getPropertyById); // Get a single listing by its ID (public)
 router.put("/:id", protect, updateProperty); // Update a specific listing (protected)

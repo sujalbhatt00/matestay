@@ -14,6 +14,9 @@ import PublicProfilePage from "./pages/PublicProfilePage";
 import CreatePropertyPage from "./pages/CreatePropertyPage";
 import MyListingsPage from "./pages/MyListingsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
+import PropertiesSearchPage from "./pages/PropertiesSearchPage";
+import LocationSearchPage from "./pages/LocationSearchPage"; // ✅ NEW IMPORT
+import AllPropertiesPage from "./pages/AllPropertiesPage"; // ✅ NEW IMPORT
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "./pages/AdminDashboard";
 import PremiumPage from "./pages/PremiumPage";
@@ -37,6 +40,15 @@ function App() {
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/profile/:userId" element={<PublicProfilePage />} />
                   <Route path="/properties/:id" element={<PropertyDetailPage />} />
+                  
+                  {/* ✅ NEW: Location Search Route (Properties + Users in Tabs) */}
+                  <Route path="/search" element={<LocationSearchPage />} />
+                  
+                  {/* ✅ NEW: All Properties Route (View All without filters) */}
+                  <Route path="/properties/all" element={<AllPropertiesPage />} />
+                  
+                  {/* Properties Search Route (Advanced search with filters) */}
+                  <Route path="/properties/search" element={<PropertiesSearchPage />} />
                   
                   {/* Protected Routes */}
                   <Route 

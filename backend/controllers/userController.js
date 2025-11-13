@@ -1,8 +1,8 @@
+import cloudinary from 'cloudinary';
 import User from "../models/User.js";
 import Property from "../models/Property.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
-import cloudinary from "cloudinary";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -56,13 +56,13 @@ export const updateProfile = async (req, res) => {
     // If profile picture is being updated and user has an old one, delete it from Cloudinary
     if (profilePic && profilePic !== user.profilePic && user.profilePic && user.profilePic.includes('cloudinary')) {
       try {
-        const urlParts = user.profilePic.split('/');
-        const publicIdWithExtension = urlParts[urlParts.length - 1];
-        const publicId = publicIdWithExtension.split('.')[0];
-        await cloudinary.uploader.destroy(`matestay/profiles/${publicId}`);
-        console.log('Old profile picture deleted from Cloudinary');
+        const publicIdMatch = user.profilePic.match(/\/matestay\/profiles\/([^/.]+)/);
+        if (publicIdMatch && publicIdMatch[1]) {
+          await cloudinary.v2.uploader.destroy(`matestay/profiles/${publicIdMatch[1]}`);
+          console.log("✅ Old profile picture deleted from Cloudinary");
+        }
       } catch (cloudinaryError) {
-        console.error('Failed to delete old profile picture from Cloudinary:', cloudinaryError);
+        console.error("⚠️ Failed to delete old image from Cloudinary:", cloudinaryError);
       }
     }
 
@@ -93,8 +93,8 @@ export const updateProfile = async (req, res) => {
   } catch (error) {
     console.error("Error updating profile:", error);
     if (error.code === 11000) {
-        const field = Object.keys(error.keyValue)[0];
-        return res.status(400).json({ message: `A user with that ${field} already exists.` });
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({ message: `${field} already exists` });
     }
     res.status(500).json({ message: "Server error while updating profile." });
   }
@@ -119,15 +119,15 @@ export const searchUsers = async (req, res) => {
   try {
     const { location, maxBudget, gender, limit } = req.query; 
 
-    if (!location) {
-      return res.status(400).json({ message: "Location is required" });
-    }
-
     const query = {
-      location: location, 
       profileSetupComplete: true,
       _id: { $ne: req.user.id } 
     };
+
+    // ✅ FIX: Make location optional
+    if (location) {
+      query.location = { $regex: location, $options: 'i' };
+    }
 
     if (maxBudget) {
       query.budget = { $lte: Number(maxBudget) };
@@ -209,52 +209,60 @@ export const deleteCloudinaryImage = async (req, res) => {
 export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log("🗑️ Delete account request for user:", userId);
+    
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ 
-        message: "User not found",
-        userDeleted: true 
-      });
+      return res.status(404).json({ message: "User not found" });
     }
     
+    // Prevent admin deletion
     if (user.isAdmin) {
-      return res.status(400).json({ message: "Admin accounts cannot be deleted through this endpoint" });
+      return res.status(403).json({ message: "Admin accounts cannot be deleted" });
     }
 
-    // Delete user's profile picture from Cloudinary if it exists
+    console.log("🧹 Starting cleanup for user:", user.email);
+
+    // Delete profile picture from Cloudinary
     if (user.profilePic && user.profilePic.includes('cloudinary')) {
       try {
-        const urlParts = user.profilePic.split('/');
-        const publicIdWithExtension = urlParts[urlParts.length - 1];
-        const publicId = publicIdWithExtension.split('.')[0];
-        await cloudinary.uploader.destroy(`matestay/profiles/${publicId}`);
+        const publicIdMatch = user.profilePic.match(/\/matestay\/profiles\/([^/.]+)/);
+        if (publicIdMatch && publicIdMatch[1]) {
+          await cloudinary.v2.uploader.destroy(`matestay/profiles/${publicIdMatch[1]}`);
+          console.log("✅ Profile picture deleted from Cloudinary");
+        }
       } catch (cloudinaryError) {
-        console.error('Failed to delete profile picture from Cloudinary:', cloudinaryError);
+        console.error("⚠️ Failed to delete profile picture:", cloudinaryError);
       }
     }
 
     // Delete user's properties
-    await Property.deleteMany({ lister: userId });
+    const deletedProperties = await Property.deleteMany({ lister: userId });
+    console.log(`✅ Deleted ${deletedProperties.deletedCount} properties`);
 
-    // Find all conversations the user is a part of
+    // Find all conversations
     const userConversations = await Conversation.find({ members: userId });
     const conversationIds = userConversations.map(c => c._id);
+    console.log(`📋 Found ${conversationIds.length} conversations`);
 
-    // Delete messages in those conversations
+    // Delete messages
     if (conversationIds.length > 0) {
-      await Message.deleteMany({ conversationId: { $in: conversationIds } });
+      const deletedMessages = await Message.deleteMany({ conversationId: { $in: conversationIds } });
+      console.log(`✅ Deleted ${deletedMessages.deletedCount} messages`);
     }
 
-    // Delete the conversations themselves
-    await Conversation.deleteMany({ _id: { $in: conversationIds } });
+    // Delete conversations
+    const deletedConvos = await Conversation.deleteMany({ _id: { $in: conversationIds } });
+    console.log(`✅ Deleted ${deletedConvos.deletedCount} conversations`);
 
-    // Delete the user
+    // Delete user
     await User.findByIdAndDelete(userId);
+    console.log("✅ User account deleted successfully");
 
     res.json({ message: "Account and all associated data deleted successfully" });
   } catch (error) {
-    console.error("Error deleting account:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Error deleting account:", error);
+    res.status(500).json({ message: "Server error while deleting account" });
   }
 };

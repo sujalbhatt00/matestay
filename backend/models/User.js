@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     verified: { type: Boolean, default: false },
-    verificationToken: { type: String }, // ✅ ADDED THIS LINE
+    verificationToken: { type: String },
     profilePic: { type: String, default: "" },
     phone: { type: String, default: "" },
 
@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["Male", "Female", "Non-binary", "Transgender", "Any", "Other"],
       default: 'Any',
+    },
+
+    // ✅ NEW: Review fields
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
     },
 
     // Premium subscription fields

@@ -1,13 +1,13 @@
-import React, { useState, useRef } from "react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import React, { useState, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import axios from '@/api/axiosInstance';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Camera, Loader2, User, Phone, MapPin, Briefcase, DollarSign } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LocationCombobox } from "@/components/ui/LocationCombobox";
-import { OccupationCombobox } from "@/components/ui/OccupationCombobox";
-import { Upload, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
-import axios from "@/api/axiosInstance";
 import { toast } from "sonner";
 
 const lifestyleOptions = ["Early Bird", "Night Owl", "Quiet", "Social", "Vegetarian", "Non-Vegetarian", "Non-Smoker", "Smoker", "Pet-Friendly"];
@@ -15,6 +15,7 @@ const genderOptions = ["Male", "Female", "Non-binary", "Transgender", "Prefer no
 const lookingForOptions = ["Any", "Male", "Female", "Non-binary", "Transgender", "Other"];
 
 export default function MultiStepProfile({ initialData, onSaved }) {
+  const { refreshUser } = useAuth(); // Add refreshUser
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: initialData.name || '',
@@ -31,7 +32,7 @@ export default function MultiStepProfile({ initialData, onSaved }) {
   });
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previousPhotoUrl, setPreviousPhotoUrl] = useState(initialData.profilePic || ''); // Track previous photo
+  const [previousPhotoUrl, setPreviousPhotoUrl] = useState(initialData.profilePic || '');
   const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
@@ -52,73 +53,125 @@ export default function MultiStepProfile({ initialData, onSaved }) {
     }));
   };
 
-  // --- UPDATED PHOTO UPLOAD WITH CLOUDINARY DUPLICATE PREVENTION ---
   const handlePhotoUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
     setIsUploading(true);
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     try {
-      // Step 1: Delete the old photo from Cloudinary if it exists
-      if (previousPhotoUrl && previousPhotoUrl.includes('cloudinary')) {
-        try {
-          // Extract public_id from the Cloudinary URL
-          const urlParts = previousPhotoUrl.split('/');
-          const publicIdWithExtension = urlParts[urlParts.length - 1];
-          const publicId = publicIdWithExtension.split('.')[0];
-          
-          // Delete the old image (You'll need to create a backend endpoint for this)
-          await axios.post('/user/delete-cloudinary-image', { publicId });
-          console.log('Old profile picture deleted from Cloudinary');
-        } catch (deleteError) {
-          console.error('Failed to delete old image:', deleteError);
-          // Continue with upload even if delete fails
-        }
-      }
-
-      // Step 2: Upload the new photo
-      const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      uploadFormData.append('upload_preset', uploadPreset);
-      uploadFormData.append('folder', 'matestay/profiles'); // Organize in folders
-
-      const response = await fetch(url, {
-        method: 'POST',
-        body: uploadFormData
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      const imageUrl = data.secure_url;
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
       
-      setFormData(prev => ({ ...prev, profilePic: imageUrl }));
-      setPreviousPhotoUrl(imageUrl); // Update previous photo tracker
-      toast.success('Photo uploaded successfully!');
+      reader.onloadend = async () => {
+        const base64String = reader.result;
+
+        const uploadData = new FormData();
+        uploadData.append('file', base64String);
+        uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+        uploadData.append('folder', 'matestay/profiles');
+
+        const cloudinaryResponse = await fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: 'POST',
+            body: uploadData,
+          }
+        );
+
+        if (!cloudinaryResponse.ok) {
+          throw new Error('Failed to upload to Cloudinary');
+        }
+
+        const cloudinaryData = await cloudinaryResponse.json();
+        const newPhotoUrl = cloudinaryData.secure_url;
+
+        console.log("✅ Photo uploaded to Cloudinary:", newPhotoUrl);
+
+        // ✅ FIX: Update formData immediately
+        setFormData(prev => ({ ...prev, profilePic: newPhotoUrl }));
+        
+        // Delete old photo from Cloudinary if it exists
+        if (previousPhotoUrl && previousPhotoUrl.includes('cloudinary')) {
+          try {
+            const urlParts = previousPhotoUrl.split('/');
+            const publicIdWithExtension = urlParts[urlParts.length - 1];
+            const publicId = publicIdWithExtension.split('.')[0];
+            
+            await axios.post('/user/delete-cloudinary-image', { publicId });
+            console.log("🗑️ Old photo deleted from Cloudinary");
+          } catch (error) {
+            console.error("Failed to delete old photo:", error);
+          }
+        }
+
+        setPreviousPhotoUrl(newPhotoUrl);
+        toast.success("Profile photo uploaded successfully!");
+      };
+
+      reader.onerror = () => {
+        throw new Error('Failed to read file');
+      };
+
     } catch (error) {
-      console.error('Error uploading photo:', error);
-      toast.error('Failed to upload photo. Please try again.');
+      console.error("Photo upload error:", error);
+      toast.error("Failed to upload photo. Please try again.");
     } finally {
       setIsUploading(false);
     }
   };
-  // --- END UPDATED PHOTO UPLOAD ---
 
   const handleSubmit = async () => {
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!formData.gender) {
+      toast.error("Please select your gender");
+      return;
+    }
+    if (!formData.age || formData.age < 18) {
+      toast.error("Age must be 18 or older");
+      return;
+    }
+    if (!formData.location) {
+      toast.error("Location is required");
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
-      const res = await axios.put('/user/update', formData);
-      toast.success(res.data.message || 'Profile updated successfully!');
-      if (onSaved) onSaved();
+      console.log("📤 Submitting profile data:", formData);
+      
+      const response = await axios.put('/user/update', formData);
+      
+      console.log("✅ Profile updated:", response.data);
+      toast.success("Profile saved successfully!");
+      
+      // ✅ FIX: Refresh user data in AuthContext
+      await refreshUser();
+      
+      if (onSaved) {
+        onSaved();
+      }
     } catch (error) {
-      console.error('Failed to save profile:', error);
-      toast.error(error.response?.data?.message || 'Failed to update profile.');
+      console.error("❌ Profile update error:", error);
+      const errorMsg = error.response?.data?.message || "Failed to save profile";
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -128,128 +181,171 @@ export default function MultiStepProfile({ initialData, onSaved }) {
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
   return (
-    <div className="bg-card p-6 md:p-10 rounded-lg border shadow-lg max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Set Up Your Profile</h1>
-      <p className="text-muted-foreground mb-6">Complete your profile to start connecting with roommates.</p>
-      
-      <div className="mb-6 flex items-center gap-4">
-        <div className={`flex-1 h-1 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`}></div>
-        <div className={`flex-1 h-1 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-muted'}`}></div>
-        <div className={`flex-1 h-1 rounded-full ${step >= 3 ? 'bg-primary' : 'bg-muted'}`}></div>
+    <div className="max-w-2xl mx-auto bg-card p-6 md:p-8 rounded-lg border shadow-lg">
+      {/* Progress Bar */}
+      <div className="mb-8">
+        <div className="flex justify-between mb-2">
+          <span className={`text-sm font-medium ${step >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>Step 1</span>
+          <span className={`text-sm font-medium ${step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>Step 2</span>
+          <span className={`text-sm font-medium ${step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>Step 3</span>
+        </div>
+        <div className="w-full bg-muted rounded-full h-2">
+          <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }}></div>
+        </div>
       </div>
 
+      {/* Step 1: Basic Info */}
       {step === 1 && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Step 1: Personal Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Full Name *</Label>
-              <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+          <h2 className="text-2xl font-bold mb-6">Basic Information</h2>
+
+          {/* Profile Picture */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative mb-4">
+              <img
+                src={formData.profilePic || "https://i.imgur.com/6VBx3io.png"}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
             </div>
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
-            </div>
+            <p className="text-sm text-muted-foreground">Click the camera icon to upload a photo</p>
           </div>
+
+          <div>
+            <Label htmlFor="name"><User className="inline h-4 w-4 mr-1" /> Full Name *</Label>
+            <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+          </div>
+
+          <div>
+            <Label htmlFor="phone"><Phone className="inline h-4 w-4 mr-1" /> Phone Number (Optional)</Label>
+            <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+91 XXXXX XXXXX" />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="age">Age</Label>
-              <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} />
-            </div>
-            <div>
-              <Label>Gender *</Label>
-              <Select name="gender" value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)} required>
-                <SelectTrigger><SelectValue placeholder="Select your gender" /></SelectTrigger>
+              <Label htmlFor="gender">Gender *</Label>
+              <Select value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
                 <SelectContent>
-                  {genderOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                  {genderOptions.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div>
-            <Label>Profile Picture</Label>
-            <div className="flex items-center gap-4 mt-2">
-              <img src={formData.profilePic || "https://i.imgur.com/6VBx3io.png"} alt="Avatar" className="w-20 h-20 rounded-full object-cover border" />
-              <Button type="button" variant="outline" onClick={() => fileInputRef.current.click()} disabled={isUploading}>
-                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                {isUploading ? 'Uploading...' : 'Upload Photo'}
-              </Button>
-              <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+
+            <div>
+              <Label htmlFor="age">Age *</Label>
+              <Input id="age" name="age" type="number" min="18" value={formData.age} onChange={handleChange} required />
             </div>
-            {formData.profilePic && formData.profilePic !== initialData.profilePic && (
-              <p className="text-xs text-green-600 mt-2">✓ New photo will replace the old one</p>
-            )}
+          </div>
+
+          <div>
+            <Label htmlFor="lookingFor">Looking For</Label>
+            <Select value={formData.lookingFor} onValueChange={(value) => handleSelectChange('lookingFor', value)}>
+              <SelectTrigger id="lookingFor">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                {lookingForOptions.map(option => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={nextStep}>Next</Button>
           </div>
         </div>
       )}
 
+      {/* Step 2: Location & Occupation */}
       {step === 2 && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Step 2: Roommate Preferences</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Location *</Label>
-              <LocationCombobox value={formData.location} onChange={(value) => handleSelectChange('location', value)} />
-            </div>
-            <div>
-              <Label>Occupation</Label>
-              <OccupationCombobox value={formData.occupation} onChange={(value) => handleSelectChange('occupation', value)} />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="budget">Monthly Budget (₹)</Label>
-              <Input id="budget" name="budget" type="number" value={formData.budget} onChange={handleChange} />
-            </div>
-            <div>
-              <Label>Looking for a Roommate Who Is</Label>
-              <Select name="lookingFor" value={formData.lookingFor} onValueChange={(value) => handleSelectChange('lookingFor', value)}>
-                <SelectTrigger><SelectValue placeholder="Select gender preference" /></SelectTrigger>
-                <SelectContent>
-                  {lookingForOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <h2 className="text-2xl font-bold mb-6">Location & Work</h2>
+
           <div>
-            <Label>Lifestyle</Label>
+            <Label htmlFor="location"><MapPin className="inline h-4 w-4 mr-1" /> Location *</Label>
+            <Input id="location" name="location" value={formData.location} onChange={handleChange} placeholder="City, State" required />
+          </div>
+
+          <div>
+            <Label htmlFor="occupation"><Briefcase className="inline h-4 w-4 mr-1" /> Occupation</Label>
+            <Input id="occupation" name="occupation" value={formData.occupation} onChange={handleChange} placeholder="Student, Working Professional, etc." />
+          </div>
+
+          <div>
+            <Label htmlFor="budget"><DollarSign className="inline h-4 w-4 mr-1" /> Monthly Budget (₹)</Label>
+            <Input id="budget" name="budget" type="number" min="0" value={formData.budget} onChange={handleChange} placeholder="10000" />
+          </div>
+
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={prevStep}>Back</Button>
+            <Button onClick={nextStep}>Next</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Bio & Lifestyle */}
+      {step === 3 && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold mb-6">About You</h2>
+
+          <div>
+            <Label htmlFor="bio">Bio (Optional)</Label>
+            <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell us about yourself..." maxLength={200} rows={4} />
+            <p className="text-xs text-muted-foreground mt-1">{200 - (formData.bio?.length || 0)} characters remaining</p>
+          </div>
+
+          <div>
+            <Label>Lifestyle Tags</Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {lifestyleOptions.map(tag => (
-                <Button key={tag} type="button" variant={formData.lifestyle.includes(tag) ? 'default' : 'outline'} size="sm" onClick={() => handleLifestyleToggle(tag)}>
+                <Badge
+                  key={tag}
+                  variant={formData.lifestyle.includes(tag) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => handleLifestyleToggle(tag)}
+                >
                   {tag}
-                </Button>
+                </Badge>
               ))}
             </div>
           </div>
-        </div>
-      )}
 
-      {step === 3 && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Step 3: About You</h2>
-          <div>
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell us a bit about yourself, your habits, and what you're looking for in a roommate." rows={5} maxLength={200} />
-            <p className="text-xs text-muted-foreground mt-1">{200 - formData.bio.length} characters remaining</p>
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={prevStep}>Back</Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Profile"
+              )}
+            </Button>
           </div>
         </div>
       )}
-
-      <div className="mt-8 pt-6 border-t flex justify-between">
-        <Button type="button" variant="outline" onClick={prevStep} disabled={step === 1}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-        </Button>
-        {step < 3 ? (
-          <Button type="button" onClick={nextStep}>
-            Next <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        ) : (
-          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isSubmitting ? 'Saving...' : 'Save Profile'}
-          </Button>
-        )}
-      </div>
     </div>
   );
 }

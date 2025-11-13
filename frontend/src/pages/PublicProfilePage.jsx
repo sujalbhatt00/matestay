@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Mail, MapPin, DollarSign, User, Calendar, Phone, MessageSquare, Search } from 'lucide-react';
+import { Loader2, Mail, MapPin, DollarSign, User, Calendar, Phone, MessageSquare, Search, Star } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -56,6 +56,19 @@ const PublicProfilePage = () => {
     }
   };
 
+  const renderStars = (rating) => {
+    return [...Array(5)].map((_, index) => (
+      <Star
+        key={index}
+        className={`h-4 w-4 ${
+          index < Math.round(rating)
+            ? 'fill-yellow-400 text-yellow-400'
+            : 'text-gray-300'
+        }`}
+      />
+    ));
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen pt-20">
@@ -73,22 +86,79 @@ const PublicProfilePage = () => {
     );
   }
 
-  const { name, occupation, location, bio, age, gender, budget, lifestyle = [], profilePic, lookingFor } = profile;
+  const { 
+    name, 
+    occupation, 
+    location, 
+    bio, 
+    age, 
+    gender, 
+    budget, 
+    lifestyle = [], 
+    profilePic, 
+    lookingFor,
+    averageRating = 0,
+    totalReviews = 0,
+  } = profile;
 
   return (
     <div className="container mx-auto px-4 py-12 pt-28">
       <div className="bg-card p-6 md:p-10 rounded-lg border border-border shadow-lg max-w-3xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
-          <img src={profilePic || defaultAvatar} alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 border-primary/20 ring-4 ring-primary/10" />
+          <img 
+            src={profilePic || defaultAvatar} 
+            alt="Profile" 
+            className="w-32 h-32 rounded-full object-cover border-4 border-primary/20 ring-4 ring-primary/10" 
+          />
           <div className="text-center sm:text-left flex-grow">
             <h1 className="text-3xl font-bold">{name}</h1>
             <p className="text-lg text-muted-foreground">{occupation || 'No occupation set'}</p>
-            {location && <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center sm:justify-start gap-1"><MapPin className="w-4 h-4" /> {location}</p>}
+            {location && (
+              <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center sm:justify-start gap-1">
+                <MapPin className="w-4 h-4" /> {location}
+              </p>
+            )}
+            {totalReviews > 0 && (
+              <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
+                <div className="flex">{renderStars(averageRating)}</div>
+                <span className="text-sm font-semibold">{averageRating}</span>
+                <span className="text-xs text-muted-foreground">({totalReviews} reviews)</span>
+              </div>
+            )}
           </div>
+          
+          {/* ✅ FIX: Message button now always visible for logged-in users (except own profile) */}
           {loggedInUser && loggedInUser._id !== userId && (
-            <Button onClick={handleStartChat} disabled={isStartingChat}>
-              {isStartingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-              {isStartingChat ? 'Starting...' : 'Message'}
+            <Button 
+              onClick={handleStartChat} 
+              disabled={isStartingChat}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isStartingChat ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Message
+                </>
+              )}
+            </Button>
+          )}
+          
+          {/* Show login prompt if not logged in */}
+          {!loggedInUser && (
+            <Button 
+              onClick={() => {
+                toast.info("Please log in to message this user");
+                navigate('/');
+              }}
+              variant="outline"
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Message (Login Required)
             </Button>
           )}
         </div>
@@ -100,17 +170,33 @@ const PublicProfilePage = () => {
           </div>
           <div className="bg-background p-4 rounded-lg border space-y-3">
             <h3 className="text-lg font-semibold mb-2">Details</h3>
-            <p className="flex items-center text-sm gap-2"><User className="w-4 h-4 text-primary" /><strong>Gender:</strong> {gender || 'Not set'}</p>
-            <p className="flex items-center text-sm gap-2"><Calendar className="w-4 h-4 text-primary" /><strong>Age:</strong> {age || 'Not set'}</p>
-            <p className="flex items-center text-sm gap-2"><DollarSign className="w-4 h-4 text-primary" /><strong>Budget:</strong> {budget ? `₹${budget}` : 'Not set'}</p>
-            <p className="flex items-center text-sm gap-2"><Search className="w-4 h-4 text-primary" /><strong>Looking for:</strong> {lookingFor || 'Any'}</p>
+            <p className="flex items-center text-sm gap-2">
+              <User className="w-4 h-4 text-primary" />
+              <strong>Gender:</strong> {gender || 'Not set'}
+            </p>
+            <p className="flex items-center text-sm gap-2">
+              <Calendar className="w-4 h-4 text-primary" />
+              <strong>Age:</strong> {age || 'Not set'}
+            </p>
+            <p className="flex items-center text-sm gap-2">
+              <DollarSign className="w-4 h-4 text-primary" />
+              <strong>Budget:</strong> {budget ? `₹${budget}` : 'Not set'}
+            </p>
+            <p className="flex items-center text-sm gap-2">
+              <Search className="w-4 h-4 text-primary" />
+              <strong>Looking for:</strong> {lookingFor || 'Any'}
+            </p>
           </div>
         </div>
 
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3">Lifestyle</h3>
           {lifestyle.length > 0 ? (
-            <div className="flex flex-wrap gap-2">{lifestyle.map(tag => <Badge key={tag} variant="secondary" className="text-sm">{tag}</Badge>)}</div>
+            <div className="flex flex-wrap gap-2">
+              {lifestyle.map(tag => (
+                <Badge key={tag} variant="secondary" className="text-sm">{tag}</Badge>
+              ))}
+            </div>
           ) : (
             <p className="text-muted-foreground text-sm">No lifestyle tags selected.</p>
           )}

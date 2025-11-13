@@ -1,6 +1,20 @@
 import Review from "../models/Review.js";
 import User from "../models/User.js";
 
+// Helper function to recalculate user's average rating
+const updateUserRating = async (userId) => {
+  const reviews = await Review.find({ reviewee: userId });
+  const totalReviews = reviews.length;
+  const averageRating = totalReviews > 0
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+    : 0;
+
+  await User.findByIdAndUpdate(userId, {
+    averageRating: parseFloat(averageRating.toFixed(1)),
+    totalReviews,
+  });
+};
+
 // Create a review
 export const createReview = async (req, res) => {
   try {
@@ -35,6 +49,9 @@ export const createReview = async (req, res) => {
 
     await review.save();
 
+    // ✅ UPDATE: Recalculate user's average rating
+    await updateUserRating(revieweeId);
+
     // Populate the review before sending
     const populatedReview = await Review.findById(review._id)
       .populate("reviewer", "name profilePic")
@@ -59,15 +76,12 @@ export const getUserReviews = async (req, res) => {
       .populate("reviewer", "name profilePic")
       .sort({ createdAt: -1 });
 
-    // Calculate average rating
-    const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-      : 0;
+    const user = await User.findById(userId).select("averageRating totalReviews");
 
     res.json({
       reviews,
-      averageRating: averageRating.toFixed(1),
-      totalReviews: reviews.length,
+      averageRating: user?.averageRating || 0,
+      totalReviews: user?.totalReviews || 0,
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);
@@ -97,6 +111,9 @@ export const updateReview = async (req, res) => {
 
     await review.save();
 
+    // ✅ UPDATE: Recalculate user's average rating
+    await updateUserRating(review.reviewee);
+
     const populatedReview = await Review.findById(review._id)
       .populate("reviewer", "name profilePic")
       .populate("reviewee", "name");
@@ -124,7 +141,11 @@ export const deleteReview = async (req, res) => {
       return res.status(403).json({ message: "You can only delete your own reviews" });
     }
 
+    const revieweeId = review.reviewee;
     await Review.findByIdAndDelete(reviewId);
+
+    // ✅ UPDATE: Recalculate user's average rating
+    await updateUserRating(revieweeId);
 
     res.json({ message: "Review deleted successfully" });
   } catch (error) {

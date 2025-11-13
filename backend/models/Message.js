@@ -1,20 +1,32 @@
 import mongoose from "mongoose";
 
-const MessageSchema = new mongoose.Schema(
+const messageSchema = new mongoose.Schema(
   {
     conversationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",
+      required: true,
     },
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
     text: {
       type: String,
+      required: true,
+    },
+    // ✅ NEW: Track read status for each user
+    readBy: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    isRead: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Message", MessageSchema);
+export default mongoose.model("Message", messageSchema);

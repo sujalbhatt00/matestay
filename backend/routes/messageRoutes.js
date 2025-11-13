@@ -1,13 +1,19 @@
 import express from "express";
-import { addMessage, getMessages } from "../controllers/messageController.js";
+import { 
+  addMessage, 
+  getMessages, 
+  getUnreadCount, 
+  getUnreadMessagesByConversation 
+} from "../controllers/messageController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Add a new message (we'll also do this with sockets)
 router.post("/", protect, addMessage);
-
-// Get all messages for one conversation
 router.get("/:conversationId", protect, getMessages);
+
+//: Routes for unread messages
+router.get("/unread/count", protect, getUnreadCount);
+router.get("/unread/by-conversation", protect, getUnreadMessagesByConversation);
 
 export default router;

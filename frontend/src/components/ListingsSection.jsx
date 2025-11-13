@@ -56,7 +56,7 @@ const ListingsSection = () => {
               <p className="text-center text-muted-foreground">No featured properties available right now.</p>
             )}
             <div className="text-center mt-12">
-              <Button onClick={() => navigate('/properties')}>
+              <Button onClick={() => navigate('/properties/all')}>
                 View All Properties
               </Button>
             </div>

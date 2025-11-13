@@ -15,11 +15,9 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 
-// Initialize Express app
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO setup
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:5173",
@@ -28,7 +26,6 @@ const io = new Server(server, {
   },
 });
 
-// Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
@@ -36,12 +33,10 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Connect to MongoDB BEFORE starting server
 const startServer = async () => {
   try {
     await connectDB();
     
-    // Routes
     app.use("/api/auth", authRoutes);
     app.use("/api/user", userRoutes);
     app.use("/api/conversations", conversationRoutes);
@@ -51,26 +46,49 @@ const startServer = async () => {
     app.use("/api/admin", adminRoutes);
     app.use("/api/reviews", reviewRoutes);
 
-    // Health check
     app.get("/", (req, res) => {
       res.send("Matestay API is running...");
     });
 
-    // Socket.IO connection handling
+    // ✅ FIX: Improved Socket.IO handling
     const userSocketMap = new Map();
 
     io.on("connection", (socket) => {
-      console.log("User connected:", socket.id);
+      console.log("✅ User connected:", socket.id);
 
-      socket.on("register", (userId) => {
-        userSocketMap.set(userId, socket.id);
-        console.log(`User ${userId} registered with socket ${socket.id}`);
+      // Register user with their socket ID
+      socket.on("addUser", (userId) => {
+        if (userId) {
+          userSocketMap.set(userId, socket.id);
+          console.log(`✅ User ${userId} registered with socket ${socket.id}`);
+          
+          // Emit online users list
+          const onlineUsers = Array.from(userSocketMap.entries()).map(([userId, socketId]) => ({
+            userId,
+            socketId
+          }));
+          io.emit("getUsers", onlineUsers);
+        }
       });
 
+      // ✅ FIX: Better message sending logic
       socket.on("sendMessage", (message) => {
+        console.log("📨 Received message to send:", message);
+        
         const receiverSocketId = userSocketMap.get(message.receiverId);
+        const senderSocketId = userSocketMap.get(message.senderId);
+        
         if (receiverSocketId) {
+          console.log(`✅ Sending message to receiver ${message.receiverId} via socket ${receiverSocketId}`);
+          io.to(receiverSocketId).emit("getMessage", message);
           io.to(receiverSocketId).emit("receiveMessage", message);
+        } else {
+          console.log(`⚠️ Receiver ${message.receiverId} is not online`);
+        }
+
+        // Also emit back to sender for confirmation (optional)
+        if (senderSocketId && senderSocketId !== receiverSocketId) {
+          io.to(senderSocketId).emit("messageSent", message);
         }
       });
 
@@ -83,17 +101,25 @@ const startServer = async () => {
       });
 
       socket.on("disconnect", () => {
+        console.log("❌ User disconnected:", socket.id);
+        
         for (const [userId, socketId] of userSocketMap.entries()) {
           if (socketId === socket.id) {
             userSocketMap.delete(userId);
-            console.log(`User ${userId} disconnected`);
+            console.log(`❌ User ${userId} removed from online users`);
+            
+            // Emit updated online users list
+            const onlineUsers = Array.from(userSocketMap.entries()).map(([userId, socketId]) => ({
+              userId,
+              socketId
+            }));
+            io.emit("getUsers", onlineUsers);
             break;
           }
         }
       });
     });
 
-    // Start server
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);

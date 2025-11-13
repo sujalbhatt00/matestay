@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MapPin, DollarSign, User, Calendar, Phone, List, Search } from 'lucide-react';
+import { Mail, MapPin, DollarSign, User, Calendar, Phone, List, Search, Star, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-export default function ViewProfile({ user, onEdit }) {
+export default function ViewProfile({ user, onEdit, onDelete }) {
   const {
     name,
     occupation,
@@ -18,8 +18,23 @@ export default function ViewProfile({ user, onEdit }) {
     phone,
     lifestyle = [],
     profilePic,
-    lookingFor, // <-- Get the new field
+    lookingFor,
+    averageRating = 0,
+    totalReviews = 0,
   } = user || {};
+
+  const renderStars = (rating) => {
+    return [...Array(5)].map((_, index) => (
+      <Star
+        key={index}
+        className={`h-4 w-4 ${
+          index < Math.round(rating)
+            ? 'fill-yellow-400 text-yellow-400'
+            : 'text-gray-300'
+        }`}
+      />
+    ));
+  };
 
   return (
     <div className="bg-card p-6 md:p-10 rounded-lg border border-border shadow-lg max-w-3xl mx-auto">
@@ -36,6 +51,13 @@ export default function ViewProfile({ user, onEdit }) {
             <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center sm:justify-start gap-1">
               <MapPin className="w-4 h-4" /> {location}
             </p>
+          )}
+          {totalReviews > 0 && (
+            <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
+              <div className="flex">{renderStars(averageRating)}</div>
+              <span className="text-sm font-semibold">{averageRating}</span>
+              <span className="text-xs text-muted-foreground">({totalReviews} reviews)</span>
+            </div>
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">
@@ -75,12 +97,10 @@ export default function ViewProfile({ user, onEdit }) {
             <DollarSign className="w-4 h-4 text-primary" />
             <strong>Budget:</strong> {budget ? `₹${budget}` : 'Not set'}
           </p>
-          {/* --- THIS IS THE CHANGE: Display "Looking For" --- */}
           <p className="flex items-center text-sm gap-2">
             <Search className="w-4 h-4 text-primary" />
             <strong>Looking for:</strong> {lookingFor || 'Any'}
           </p>
-          {/* --- END CHANGE --- */}
         </div>
       </div>
 

@@ -6,7 +6,7 @@ export const createProperty = async (req, res) => {
   try {
     const newProperty = new Property({
       ...req.body,
-      lister: req.user.id, // Associate the property with the logged-in user
+      lister: req.user.id,
     });
     const savedProperty = await newProperty.save();
     res.status(201).json(savedProperty);
@@ -16,12 +16,12 @@ export const createProperty = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION TO GET FEATURED PROPERTIES ---
+// --- Get Featured Properties ---
 export const getFeaturedProperties = async (req, res) => {
   try {
-    const limit = Number(req.query.limit) || 4; // Default to 4 if no limit is specified
+    const limit = Number(req.query.limit) || 4;
     const properties = await Property.find({ isAvailable: true })
-      .sort({ createdAt: -1 }) // Get the most recent ones
+      .sort({ createdAt: -1 })
       .limit(limit)
       .populate("lister", "name profilePic");
     res.status(200).json(properties);
@@ -48,32 +48,43 @@ export const getPropertyById = async (req, res) => {
   }
 };
 
-// --- Search Properties ---
+// --- Search Properties --- ✅ KEEP ONLY THIS ONE
 export const searchProperties = async (req, res) => {
   try {
     const { location, propertyType, minPrice, maxPrice, bedrooms } = req.query;
-    let query = {};
+
+    const query = { isAvailable: true };
 
     if (location) {
-      query.location = { $regex: location, $options: "i" }; // Case-insensitive search
+      query.location = { $regex: location, $options: 'i' };
     }
+
     if (propertyType) {
       query.propertyType = propertyType;
     }
+
     if (minPrice || maxPrice) {
       query.rent = {};
       if (minPrice) query.rent.$gte = Number(minPrice);
       if (maxPrice) query.rent.$lte = Number(maxPrice);
     }
+
     if (bedrooms) {
-      query.bedrooms = Number(bedrooms);
+      if (bedrooms === '4') {
+        query.bedrooms = { $gte: 4 };
+      } else {
+        query.bedrooms = Number(bedrooms);
+      }
     }
 
-    const properties = await Property.find(query).populate("lister", "name profilePic");
-    res.status(200).json(properties);
+    const properties = await Property.find(query)
+      .populate('lister', 'name email profilePic')
+      .sort({ createdAt: -1 });
+
+    res.json(properties);
   } catch (error) {
-    console.error("Backend: Error searching properties:", error);
-    res.status(500).json({ message: "Error searching properties", error: error.message });
+    console.error('Error searching properties:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -86,7 +97,6 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    // Check if the user is the owner of the property
     if (property.lister.toString() !== req.user.id) {
       return res.status(401).json({ message: "User not authorized" });
     }
@@ -117,7 +127,7 @@ export const deleteProperty = async (req, res) => {
       return res.status(401).json({ message: "User not authorized" });
     }
 
-    await property.deleteOne(); // Use deleteOne() instead of remove()
+    await property.deleteOne();
     res.status(200).json({ message: "Property removed" });
   } catch (error) {
     console.error("Backend: Error deleting property:", error);
@@ -133,5 +143,21 @@ export const getUserProperties = async (req, res) => {
   } catch (error) {
     console.error("Backend: Error fetching user properties:", error);
     res.status(500).json({ message: "Error fetching user properties", error: error.message });
+  }
+};
+
+// --- Get Property Stats ---
+export const getPropertyStats = async (req, res) => {
+  try {
+    const totalListings = await Property.countDocuments({ isAvailable: true });
+    const totalUsers = await User.countDocuments({ profileSetupComplete: true });
+    
+    res.status(200).json({
+      totalListings,
+      totalUsers,
+    });
+  } catch (error) {
+    console.error("Backend: Error fetching property stats:", error);
+    res.status(500).json({ message: "Error fetching stats", error: error.message });
   }
 };
