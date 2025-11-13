@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useChat } from '@/context/ChatContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,14 @@ import { MessageSquare } from 'lucide-react';
 
 const FloatingChatButton = () => {
   const { user } = useAuth();
-  const { notifications } = useChat();
+  const { unreadCount } = useChat();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Don't render the button if the user is not logged in
-  if (!user) {
+  // ✅ FIX: Don't render if user is not logged in OR on chat page
+  if (!user || location.pathname.startsWith('/chat')) {
     return null;
   }
-
-  const unreadCount = notifications.length;
 
   return (
     <Button

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MapPin, DollarSign, User, Calendar, Phone, List, Search, Star, Trash2 } from 'lucide-react';
+import { Mail, MapPin, DollarSign, User, Calendar, Phone, List, Search, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-export default function ViewProfile({ user, onEdit, onDelete }) {
+export default function ViewProfile({ user, onEdit }) {
   const {
     name,
     occupation,

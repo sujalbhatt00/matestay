@@ -3,9 +3,9 @@ import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import MultiStepProfile from "../components/MultiStepProfile";
 import ViewProfile from "../components/ViewProfile";
+import ReviewSection from "../components/ReviewSection"; // ✅ NEW: Import ReviewSection
 import { Loader2, AlertTriangle } from "lucide-react";
-import axios from "@/api/axiosInstance";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import axios from "@/api/axiosInstance";
+import { toast } from "sonner";
 
 export default function Profile() {
   const { user, refreshUser, loading, logout } = useContext(AuthContext);
@@ -58,12 +59,10 @@ export default function Profile() {
       
       console.log("✅ Account deleted:", response.data);
       
-      // Show success message
       toast.success("Your account has been deleted successfully", {
         duration: 3000,
       });
       
-      // Wait a moment before logging out
       setTimeout(() => {
         logout();
         navigate("/");
@@ -71,10 +70,7 @@ export default function Profile() {
       
     } catch (error) {
       console.error("❌ Failed to delete account:", error);
-      
-      const errorMessage = error.response?.data?.message || "Failed to delete account. Please try again.";
-      toast.error(errorMessage);
-      
+      toast.error(error.response?.data?.message || "Failed to delete account. Please try again.");
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
@@ -100,6 +96,11 @@ export default function Profile() {
         ) : (
           <div className="space-y-8">
             <ViewProfile user={user} onEdit={handleEditProfile} />
+            
+            {}
+            <div className="max-w-3xl mx-auto">
+              <ReviewSection userId={user._id} />
+            </div>
             
             {/* Delete Account Section */}
             <div className="max-w-3xl mx-auto">
@@ -158,7 +159,7 @@ export default function Profile() {
               
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                 <p className="font-semibold text-destructive mb-2 text-sm">
-                  ⚠️ The following will be permanently deleted:
+                  The following will be permanently deleted:
                 </p>
                 <ul className="text-xs space-y-1.5 pl-4">
                   <li>✗ Your profile and personal information</li>
