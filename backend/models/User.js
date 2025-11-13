@@ -45,6 +45,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null, // Null means no active subscription or never subscribed
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
     paymentGatewayCustomerId: { // Store customer ID from Stripe/Razorpay etc.
       type: String,
       default: null,

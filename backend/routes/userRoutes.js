@@ -5,6 +5,8 @@ import {
   getPublicUserProfile,
   searchUsers,
   getFeaturedUsers,
+  deleteAccount,
+  deleteCloudinaryImage,
   getAllUsers, 
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -19,7 +21,8 @@ router.get("/public-profile/:userId", getPublicUserProfile);
 router.put("/update", protect, updateProfile);
 router.get("/profile", protect, getUserProfile);
 router.get("/search", protect, searchUsers);
-
+router.delete("/delete-account", protect, deleteAccount);
+router.post("/delete-cloudinary-image", protect, deleteCloudinaryImage);
 // --- NEW ROUTE TO GET ALL USERS ---
 router.get("/all", protect, getAllUsers);
 

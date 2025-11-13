@@ -12,6 +12,7 @@ import conversationRoutes from "./routes/conversationRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import propertyRoutes from "./routes/propertyRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 // --- Config ---
 dotenv.config();
@@ -46,6 +47,7 @@ app.use("/api/conversations", conversationRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // --- Socket.IO Logic ---
 let onlineUsers = [];

@@ -1,11 +1,23 @@
 import React, { useContext, useState } from "react";
-import { Moon, Sun, Menu, X, MessageSquare, Users, PlusCircle } from "lucide-react"; // Changed Building2 to Users
+import { 
+  Moon, Sun, Menu, X, MessageSquare, Users, PlusCircle, 
+  ShieldCheck, User as UserIcon, LogOut, LayoutDashboard 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
 import { useNavigate, NavLink } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -42,11 +54,9 @@ const Navbar = () => {
             </div>
 
             <div className="hidden md:flex items-center gap-6">
-              {/* --- THIS IS THE CHANGE --- */}
               <NavLink to="/find-roommates" className={getNavLinkClass}>
                  <Users className="h-4 w-4 mr-1" /> Find Roommates
               </NavLink>
-              {/* --- END CHANGE --- */}
               <NavLink to="/chat" className={getNavLinkClass}>
                  <MessageSquare className="h-4 w-4 mr-1" /> Messages
                  {unreadCount > 0 && (
@@ -74,19 +84,56 @@ const Navbar = () => {
                    >
                      <PlusCircle className="h-4 w-4 mr-1" /> Post Listing
                    </Button>
-                  <img
-                    src={user.profilePic || defaultAvatar}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full cursor-pointer object-cover"
-                    onClick={() => navigate("/profile")}
-                  />
-                  <button className="text-sm text-muted-foreground hover:text-red-500" onClick={logout}>Logout</button>
+
+                  {/* User Dropdown Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.profilePic || defaultAvatar} alt={user.name} />
+                          <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user.name}</p>
+                          <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/profile')}>
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/my-listings')}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>My Listings</span>
+                      </DropdownMenuItem>
+                      
+                      {/* Admin Panel Link - Only show if user is admin */}
+                      {user.isAdmin && (
+                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={logout} className="text-red-500 focus:text-red-500 focus:bg-red-500/10">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <Button className="cursor-pointer bg-[#5b5dda] text-white hover:bg-[#4a4ab5]" onClick={() => setShowAuth(true)}>Sign In</Button>
               )}
             </div>
 
+            {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center">
                <Button
                 variant="ghost"
@@ -104,6 +151,7 @@ const Navbar = () => {
         </div>
       </nav>
 
+      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden fixed inset-0 top-24 z-40 bg-background/95 backdrop-blur-sm p-6">
           <div className="flex flex-col items-center gap-6">
@@ -119,21 +167,35 @@ const Navbar = () => {
                  )}
             </NavLink>
 
-            <div className="flex items-center gap-6 mt-4">
+            <div className="flex flex-col items-center gap-4 mt-4 w-full">
               {user ? (
-                <div className="flex items-center gap-3">
+                <>
                   <Button
-                     size="sm"
-                     className="bg-primary/10 text-primary hover:bg-primary/20 mr-2"
+                     className="w-full bg-primary/10 text-primary hover:bg-primary/20"
                      onClick={() => { toggleMenu(); navigate('/create-listing'); }}
                    >
-                     Post Listing
+                     <PlusCircle className="h-4 w-4 mr-2" /> Post Listing
                    </Button>
-                  <img src={user.profilePic || defaultAvatar} alt="Profile" className="w-10 h-10 rounded-full" onClick={() => { toggleMenu(); navigate("/profile"); }} />
-                  <button className="px-6 py-2 bg-[#5b5dda] text-white rounded" onClick={() => { logout(); toggleMenu(); }}>Logout</button>
-                </div>
+                  <Button variant="outline" className="w-full" onClick={() => { toggleMenu(); navigate("/profile"); }}>
+                    <UserIcon className="h-4 w-4 mr-2" /> Profile
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => { toggleMenu(); navigate("/my-listings"); }}>
+                    <LayoutDashboard className="h-4 w-4 mr-2" /> My Listings
+                  </Button>
+                  
+                  {/* Admin Panel for Mobile - Only show if user is admin */}
+                  {user.isAdmin && (
+                    <Button variant="outline" className="w-full" onClick={() => { toggleMenu(); navigate("/admin"); }}>
+                      <ShieldCheck className="h-4 w-4 mr-2" /> Admin Panel
+                    </Button>
+                  )}
+
+                  <Button variant="destructive" className="w-full" onClick={() => { logout(); toggleMenu(); }}>
+                    <LogOut className="h-4 w-4 mr-2" /> Logout
+                  </Button>
+                </>
               ) : (
-                <Button className="cursor-pointer bg-[#5b5dda] text-white px-8 py-2" onClick={() => { setShowAuth(true); toggleMenu(); }}>Sign In</Button>
+                <Button className="cursor-pointer bg-[#5b5dda] text-white w-full" onClick={() => { setShowAuth(true); toggleMenu(); }}>Sign In</Button>
               )}
             </div>
           </div>
@@ -144,4 +206,5 @@ const Navbar = () => {
     </>
   );
 };
+
 export default Navbar;

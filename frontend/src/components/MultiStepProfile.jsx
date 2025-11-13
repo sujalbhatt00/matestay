@@ -1,13 +1,13 @@
-import React, { useState, useRef } from 'react';
-import axios from '@/api/axiosInstance';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LocationCombobox } from './ui/LocationCombobox';
-import { OccupationCombobox } from './ui/OccupationCombobox';
-import { Loader2, Upload, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { LocationCombobox } from "@/components/ui/LocationCombobox";
+import { OccupationCombobox } from "@/components/ui/OccupationCombobox";
+import { Upload, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
+import axios from "@/api/axiosInstance";
 import { toast } from "sonner";
 
 const lifestyleOptions = ["Early Bird", "Night Owl", "Quiet", "Social", "Vegetarian", "Non-Vegetarian", "Non-Smoker", "Smoker", "Pet-Friendly"];
@@ -21,7 +21,7 @@ export default function MultiStepProfile({ initialData, onSaved }) {
     phone: initialData.phone || '',
     age: initialData.age || '',
     gender: initialData.gender || '',
-    lookingFor: initialData.lookingFor || 'Any', // <-- Add new field
+    lookingFor: initialData.lookingFor || 'Any',
     location: initialData.location || '',
     occupation: initialData.occupation || '',
     budget: initialData.budget || '',
@@ -31,6 +31,7 @@ export default function MultiStepProfile({ initialData, onSaved }) {
   });
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previousPhotoUrl, setPreviousPhotoUrl] = useState(initialData.profilePic || ''); // Track previous photo
   const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
@@ -51,38 +52,73 @@ export default function MultiStepProfile({ initialData, onSaved }) {
     }));
   };
 
+  // --- UPDATED PHOTO UPLOAD WITH CLOUDINARY DUPLICATE PREVENTION ---
   const handlePhotoUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
     setIsUploading(true);
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-    const uploadFormData = new FormData();
-    uploadFormData.append('file', file);
-    uploadFormData.append('upload_preset', uploadPreset);
+
     try {
-      const res = await fetch(url, { method: 'POST', body: uploadFormData });
-      const data = await res.json();
-      setFormData(prev => ({ ...prev, profilePic: data.secure_url }));
-      toast.success("Profile picture updated!");
+      // Step 1: Delete the old photo from Cloudinary if it exists
+      if (previousPhotoUrl && previousPhotoUrl.includes('cloudinary')) {
+        try {
+          // Extract public_id from the Cloudinary URL
+          const urlParts = previousPhotoUrl.split('/');
+          const publicIdWithExtension = urlParts[urlParts.length - 1];
+          const publicId = publicIdWithExtension.split('.')[0];
+          
+          // Delete the old image (You'll need to create a backend endpoint for this)
+          await axios.post('/user/delete-cloudinary-image', { publicId });
+          console.log('Old profile picture deleted from Cloudinary');
+        } catch (deleteError) {
+          console.error('Failed to delete old image:', deleteError);
+          // Continue with upload even if delete fails
+        }
+      }
+
+      // Step 2: Upload the new photo
+      const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('upload_preset', uploadPreset);
+      uploadFormData.append('folder', 'matestay/profiles'); // Organize in folders
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: uploadFormData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      const imageUrl = data.secure_url;
+      
+      setFormData(prev => ({ ...prev, profilePic: imageUrl }));
+      setPreviousPhotoUrl(imageUrl); // Update previous photo tracker
+      toast.success('Photo uploaded successfully!');
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload image.");
+      console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
+  // --- END UPDATED PHOTO UPLOAD ---
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await axios.put('/user/update', formData);
-      toast.success("Profile saved successfully!");
-      onSaved();
+      const res = await axios.put('/user/update', formData);
+      toast.success(res.data.message || 'Profile updated successfully!');
+      if (onSaved) onSaved();
     } catch (error) {
-      console.error("Failed to save profile:", error);
-      toast.error("Could not save profile. Please check your information.");
+      console.error('Failed to save profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile.');
     } finally {
       setIsSubmitting(false);
     }
@@ -120,7 +156,6 @@ export default function MultiStepProfile({ initialData, onSaved }) {
               <Label htmlFor="age">Age</Label>
               <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} />
             </div>
-            {/* --- THIS IS THE CHANGE: Gender Select --- */}
             <div>
               <Label>Gender *</Label>
               <Select name="gender" value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)} required>
@@ -130,7 +165,6 @@ export default function MultiStepProfile({ initialData, onSaved }) {
                 </SelectContent>
               </Select>
             </div>
-            {/* --- END CHANGE --- */}
           </div>
           <div>
             <Label>Profile Picture</Label>
@@ -142,6 +176,9 @@ export default function MultiStepProfile({ initialData, onSaved }) {
               </Button>
               <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
             </div>
+            {formData.profilePic && formData.profilePic !== initialData.profilePic && (
+              <p className="text-xs text-green-600 mt-2">✓ New photo will replace the old one</p>
+            )}
           </div>
         </div>
       )}
@@ -164,7 +201,6 @@ export default function MultiStepProfile({ initialData, onSaved }) {
               <Label htmlFor="budget">Monthly Budget (₹)</Label>
               <Input id="budget" name="budget" type="number" value={formData.budget} onChange={handleChange} />
             </div>
-            {/* --- THIS IS THE CHANGE: Looking For Select --- */}
             <div>
               <Label>Looking for a Roommate Who Is</Label>
               <Select name="lookingFor" value={formData.lookingFor} onValueChange={(value) => handleSelectChange('lookingFor', value)}>
@@ -174,7 +210,6 @@ export default function MultiStepProfile({ initialData, onSaved }) {
                 </SelectContent>
               </Select>
             </div>
-            {/* --- END CHANGE --- */}
           </div>
           <div>
             <Label>Lifestyle</Label>
@@ -217,4 +252,4 @@ export default function MultiStepProfile({ initialData, onSaved }) {
       </div>
     </div>
   );
-};
+}
