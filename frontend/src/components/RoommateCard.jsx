@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Loader2, User } from 'lucide-react';
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge"; // Import the Badge component
+import { Badge } from "@/components/ui/badge";
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -16,7 +16,7 @@ const RoommateCard = ({ roommate }) => {
   const navigate = useNavigate();
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  // --- THIS IS THE CHANGE: Check if the card is for the logged-in user ---
+  // Check if the card is for the logged-in user
   const isOwnProfile = user && user._id === roommate._id;
 
   const handleStartChat = async () => {
@@ -60,29 +60,52 @@ const RoommateCard = ({ roommate }) => {
           <AvatarFallback>{roommate.name ? roommate.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
         </Avatar>
         
-        {/* --- THIS IS THE CHANGE: Display name and "You" badge --- */}
+        {/* Display name and "You" badge */}
         <div className="flex justify-center items-center gap-2 mb-1">
           <h3 className="text-lg font-semibold text-foreground">{roommate.name}</h3>
           {isOwnProfile && <Badge variant="secondary">You</Badge>}
         </div>
-        {/* --- END CHANGE --- */}
 
         <p className="text-sm text-muted-foreground mb-4">{roommate.occupation || 'Student'}</p>
         
         <div className="flex justify-center space-x-2">
-          {/* --- THIS IS THE CHANGE: Conditional button rendering --- */}
+          {/* Conditional button rendering based on whether it's the user's own profile */}
           {isOwnProfile ? (
-            <Button variant="outline" size="sm" onClick={() => navigate(`/profile`)}>
+            // Show "View Your Profile" button if it's the logged-in user
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                navigate(`/profile`); 
+              }}
+              className="w-full"
+            >
               <User className="mr-2 h-4 w-4" />
               View Your Profile
             </Button>
           ) : (
+            // Show both "View Profile" and "Message" buttons for other users
             <>
-              <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${roommate._id}`); }}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  navigate(`/profile/${roommate._id}`); 
+                }}
+              >
                 <User className="mr-2 h-4 w-4" />
                 View Profile
               </Button>
-              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStartChat(); }} disabled={isStartingChat}>
+              <Button 
+                size="sm" 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  handleStartChat(); 
+                }} 
+                disabled={isStartingChat}
+              >
                 {isStartingChat ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -92,7 +115,6 @@ const RoommateCard = ({ roommate }) => {
               </Button>
             </>
           )}
-          {/* --- END CHANGE --- */}
         </div>
       </CardContent>
     </Card>
