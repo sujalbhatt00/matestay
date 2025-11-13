@@ -6,6 +6,7 @@ import { Loader2, Mail, MapPin, DollarSign, User, Calendar, Phone, MessageSquare
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import ReviewSection from '@/components/ReviewSection';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -91,6 +92,7 @@ const PublicProfilePage = () => {
             </Button>
           )}
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-background p-4 rounded-lg border">
             <h3 className="text-lg font-semibold mb-3">About</h3>
@@ -101,18 +103,22 @@ const PublicProfilePage = () => {
             <p className="flex items-center text-sm gap-2"><User className="w-4 h-4 text-primary" /><strong>Gender:</strong> {gender || 'Not set'}</p>
             <p className="flex items-center text-sm gap-2"><Calendar className="w-4 h-4 text-primary" /><strong>Age:</strong> {age || 'Not set'}</p>
             <p className="flex items-center text-sm gap-2"><DollarSign className="w-4 h-4 text-primary" /><strong>Budget:</strong> {budget ? `₹${budget}` : 'Not set'}</p>
-            {/* --- THIS IS THE CHANGE: Display "Looking For" --- */}
             <p className="flex items-center text-sm gap-2"><Search className="w-4 h-4 text-primary" /><strong>Looking for:</strong> {lookingFor || 'Any'}</p>
-            {/* --- END CHANGE --- */}
           </div>
         </div>
-        <div>
+
+        <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3">Lifestyle</h3>
           {lifestyle.length > 0 ? (
             <div className="flex flex-wrap gap-2">{lifestyle.map(tag => <Badge key={tag} variant="secondary" className="text-sm">{tag}</Badge>)}</div>
           ) : (
             <p className="text-muted-foreground text-sm">No lifestyle tags selected.</p>
           )}
+        </div>
+
+        {/* Review Section */}
+        <div className="mt-8">
+          <ReviewSection userId={userId} />
         </div>
       </div>
     </div>

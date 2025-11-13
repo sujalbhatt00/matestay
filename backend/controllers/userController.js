@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import Property from "../models/Property.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from "cloudinary";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -11,72 +11,25 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// --- Delete Cloudinary Image ---
-export const deleteCloudinaryImage = async (req, res) => {
+// --- Get Logged-in User's Profile ---
+export const getUserProfile = async (req, res) => {
   try {
-    const { publicId } = req.body;
+    console.log("🔵 getUserProfile called for user:", req.user.id);
     
-    if (!publicId) {
-      return res.status(400).json({ message: "Public ID is required" });
-    }
-
-    // Delete from Cloudinary
-    await cloudinary.uploader.destroy(`matestay/profiles/${publicId}`);
+    const user = await User.findById(req.user.id).select("-password");
     
-    res.json({ message: "Image deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting Cloudinary image:", error);
-    res.status(500).json({ message: "Failed to delete image" });
-  }
-};
-
-// --- Delete User's Own Account ---
-export const deleteAccount = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
-
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      console.log("❌ User not found in getUserProfile:", req.user.id);
+      return res.status(404).json({ 
+        message: "User not found. Account may have been deleted.",
+        userDeleted: true 
+      });
     }
     
-    if (user.isAdmin) {
-      return res.status(400).json({ message: "Admin accounts cannot be deleted through this endpoint" });
-    }
-
-    // Delete user's profile picture from Cloudinary if it exists
-    if (user.profilePic && user.profilePic.includes('cloudinary')) {
-      try {
-        const urlParts = user.profilePic.split('/');
-        const publicIdWithExtension = urlParts[urlParts.length - 1];
-        const publicId = publicIdWithExtension.split('.')[0];
-        await cloudinary.uploader.destroy(`matestay/profiles/${publicId}`);
-      } catch (cloudinaryError) {
-        console.error('Failed to delete profile picture from Cloudinary:', cloudinaryError);
-      }
-    }
-
-    // Delete user's properties
-    await Property.deleteMany({ lister: userId });
-
-    // Find all conversations the user is a part of
-    const userConversations = await Conversation.find({ members: userId });
-    const conversationIds = userConversations.map(c => c._id);
-
-    // Delete messages in those conversations
-    if (conversationIds.length > 0) {
-      await Message.deleteMany({ conversationId: { $in: conversationIds } });
-    }
-
-    // Delete the conversations themselves
-    await Conversation.deleteMany({ _id: { $in: conversationIds } });
-
-    // Delete the user
-    await User.findByIdAndDelete(userId);
-
-    res.json({ message: "Account and all associated data deleted successfully" });
+    console.log("✅ User found:", user.email);
+    res.json(user);
   } catch (error) {
-    console.error("Error deleting account:", error);
+    console.error("❌ Error in getUserProfile:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -85,7 +38,14 @@ export const deleteAccount = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    if (!user) {
+      console.log("❌ User not found in updateProfile:", req.user.id);
+      return res.status(404).json({ 
+        message: "User not found. Account may have been deleted.",
+        userDeleted: true 
+      });
+    }
 
     const {
       name, phone, gender, age, location,
@@ -137,17 +97,6 @@ export const updateProfile = async (req, res) => {
         return res.status(400).json({ message: `A user with that ${field} already exists.` });
     }
     res.status(500).json({ message: "Server error while updating profile." });
-  }
-};
-
-// --- Get Logged-in User's Profile ---
-export const getUserProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -234,6 +183,78 @@ export const getAllUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("Error fetching all users:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// --- Delete Cloudinary Image ---
+export const deleteCloudinaryImage = async (req, res) => {
+  try {
+    const { publicId } = req.body;
+    
+    if (!publicId) {
+      return res.status(400).json({ message: "Public ID is required" });
+    }
+
+    await cloudinary.uploader.destroy(`matestay/profiles/${publicId}`);
+    
+    res.json({ message: "Image deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting Cloudinary image:", error);
+    res.status(500).json({ message: "Failed to delete image" });
+  }
+};
+
+// --- Delete User's Own Account ---
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ 
+        message: "User not found",
+        userDeleted: true 
+      });
+    }
+    
+    if (user.isAdmin) {
+      return res.status(400).json({ message: "Admin accounts cannot be deleted through this endpoint" });
+    }
+
+    // Delete user's profile picture from Cloudinary if it exists
+    if (user.profilePic && user.profilePic.includes('cloudinary')) {
+      try {
+        const urlParts = user.profilePic.split('/');
+        const publicIdWithExtension = urlParts[urlParts.length - 1];
+        const publicId = publicIdWithExtension.split('.')[0];
+        await cloudinary.uploader.destroy(`matestay/profiles/${publicId}`);
+      } catch (cloudinaryError) {
+        console.error('Failed to delete profile picture from Cloudinary:', cloudinaryError);
+      }
+    }
+
+    // Delete user's properties
+    await Property.deleteMany({ lister: userId });
+
+    // Find all conversations the user is a part of
+    const userConversations = await Conversation.find({ members: userId });
+    const conversationIds = userConversations.map(c => c._id);
+
+    // Delete messages in those conversations
+    if (conversationIds.length > 0) {
+      await Message.deleteMany({ conversationId: { $in: conversationIds } });
+    }
+
+    // Delete the conversations themselves
+    await Conversation.deleteMany({ _id: { $in: conversationIds } });
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    res.json({ message: "Account and all associated data deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting account:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

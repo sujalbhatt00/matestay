@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import axios from '@/api/axiosInstance';
@@ -11,82 +11,81 @@ export const ChatProvider = ({ children }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  
-  // --- STATE IS NOW CENTRALIZED HERE ---
   const [conversations, setConversations] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
 
-  // Fetch conversations once when the user logs in
-  const fetchConversations = useCallback(async () => {
-    if (!user) return;
-    setLoadingConversations(true);
-    try {
-      const res = await axios.get('/conversations');
-      setConversations(res.data || []);
-    } catch (error) {
-      console.error("Failed to fetch conversations:", error);
+  // Fetch conversations when user changes
+  useEffect(() => {
+    if (!user) {
       setConversations([]);
-    } finally {
       setLoadingConversations(false);
+      return;
     }
-  }, [user]);
 
-  useEffect(() => {
+    const fetchConversations = async () => {
+      setLoadingConversations(true);
+      try {
+        const res = await axios.get('/conversations');
+        setConversations(res.data || []);
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error);
+        setConversations([]);
+      } finally {
+        setLoadingConversations(false);
+      }
+    };
+
     fetchConversations();
-  }, [fetchConversations]);
+  }, [user?._id]); // Only re-fetch when user ID changes
 
-  // Manage socket connection and listeners
+  // Manage socket connection
   useEffect(() => {
-    if (user && user._id) {
-      const newSocket = io("http://localhost:5000");
-      setSocket(newSocket);
-
-      newSocket.emit("addUser", user._id);
-      newSocket.on("getUsers", (users) => setOnlineUsers(users));
-
-      // --- SOCKET LOGIC IS NOW CENTRALIZED AND STABLE ---
-      const handleGetMessage = (message) => {
-        // 1. Update the conversation list
-        setConversations(prevConvos => {
-          const convoIndex = prevConvos.findIndex(c => c._id === message.conversationId);
-          if (convoIndex > -1) {
-            const updatedConvo = {
-              ...prevConvos[convoIndex],
-              lastMessage: message.text,
-              lastMessageTimestamp: message.createdAt,
-            };
-            const otherConvos = prevConvos.filter(c => c._id !== message.conversationId);
-            return [updatedConvo, ...otherConvos];
-          }
-          // If it's a brand new conversation, refetch everything to be safe
-          fetchConversations();
-          return prevConvos;
-        });
-
-        // 2. Add a notification if the chat is not open
-        const isChatOpen = window.location.pathname.includes(message.conversationId);
-        if (!isChatOpen) {
-          setNotifications(prev => {
-            if (prev.some(n => n.conversationId === message.conversationId)) return prev;
-            return [message, ...prev];
-          });
-        }
-      };
-
-      newSocket.on("getMessage", handleGetMessage);
-
-      return () => {
-        newSocket.off("getMessage", handleGetMessage);
-        newSocket.disconnect();
-      };
-    } else {
+    if (!user?._id) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
       }
+      return;
     }
-  }, [user, fetchConversations]); // fetchConversations is stable now
+
+    const newSocket = io("http://localhost:5000");
+    setSocket(newSocket);
+
+    newSocket.emit("addUser", user._id);
+    newSocket.on("getUsers", (users) => setOnlineUsers(users));
+
+    const handleGetMessage = (message) => {
+      setConversations(prevConvos => {
+        const convoIndex = prevConvos.findIndex(c => c._id === message.conversationId);
+        if (convoIndex > -1) {
+          const updatedConvo = {
+            ...prevConvos[convoIndex],
+            lastMessage: message.text,
+            lastMessageTimestamp: message.createdAt,
+          };
+          const otherConvos = prevConvos.filter((_, i) => i !== convoIndex);
+          return [updatedConvo, ...otherConvos];
+        }
+        return prevConvos;
+      });
+
+      const isChatOpen = window.location.pathname.includes(message.conversationId);
+      if (!isChatOpen) {
+        setNotifications(prev => {
+          if (prev.some(n => n.conversationId === message.conversationId)) return prev;
+          return [message, ...prev];
+        });
+      }
+    };
+
+    newSocket.on("getMessage", handleGetMessage);
+
+    return () => {
+      newSocket.off("getMessage", handleGetMessage);
+      newSocket.disconnect();
+    };
+  }, [user?._id]);
 
   const removeNotification = (conversationId) => {
     setNotifications((prev) => prev.filter(n => n.conversationId !== conversationId));

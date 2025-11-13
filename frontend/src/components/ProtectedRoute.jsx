@@ -1,14 +1,57 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate, Outlet } from 'react-router-dom'; // <-- Make sure Outlet is imported
+import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-const ProtectedRoute = () => {
-  const { user, loading } = useAuth();
-  // console.log("Standard ProtectedRoute: State - loading:", loading, "user:", user); // Optional logging
+const ProtectedRoute = ({ children }) => {
+  const { user, loading, refreshUser, logout } = useAuth();
+  const [verifying, setVerifying] = useState(true);
+  const [isValid, setIsValid] = useState(false);
 
-  if (loading) {
-    // console.log("Standard ProtectedRoute: Loading, showing spinner.");
+  useEffect(() => {
+    let isMounted = true;
+
+    const verifyUser = async () => {
+      if (!user) {
+        setIsValid(false);
+        setVerifying(false);
+        return;
+      }
+
+      console.log('🔍 ProtectedRoute: Verifying user exists in database...');
+      
+      try {
+        const result = await refreshUser();
+        
+        if (isMounted) {
+          if (result) {
+            console.log('✅ ProtectedRoute: User verified successfully');
+            setIsValid(true);
+          } else {
+            console.log('❌ ProtectedRoute: User verification failed');
+            logout();
+            setIsValid(false);
+          }
+          setVerifying(false);
+        }
+      } catch (error) {
+        console.error('❌ ProtectedRoute: Error during verification:', error);
+        if (isMounted) {
+          logout();
+          setIsValid(false);
+          setVerifying(false);
+        }
+      }
+    };
+
+    verifyUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?._id]); // Only re-run if user ID changes
+
+  if (loading || verifying) {
     return (
       <div className="flex justify-center items-center h-screen pt-20">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -16,14 +59,11 @@ const ProtectedRoute = () => {
     );
   }
 
-  if (!user) {
-    // console.log("Standard ProtectedRoute: No user, redirecting.");
+  if (!user || !isValid) {
     return <Navigate to="/" replace />;
   }
 
-  // console.log("Standard ProtectedRoute: User found, rendering Outlet.");
-  // If user exists, render the child route component via Outlet
-  return <Outlet />;
+  return children;
 };
 
 export default ProtectedRoute;

@@ -6,16 +6,15 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     verified: { type: Boolean, default: false },
+    verificationToken: { type: String }, // ✅ ADDED THIS LINE
     profilePic: { type: String, default: "" },
     phone: { type: String, default: "" },
 
-    // --- Profile fields ---
-    // --- THIS IS THE CHANGE: Expanded gender options ---
+    // Profile fields
     gender: { 
       type: String, 
       enum: ["Male", "Female", "Non-binary", "Transgender", "Prefer not to say", "Other"] 
     },
-    // --- END CHANGE ---
     age: { type: Number },
     location: { type: String },
     budget: { type: Number },
@@ -23,37 +22,33 @@ const userSchema = new mongoose.Schema(
     lifestyle: [String],
     bio: { type: String, maxlength: 200 },
     profileSetupComplete: { type: Boolean, default: false },
-
-    // --- THIS IS THE CHANGE: New "Looking For" field ---
     lookingFor: {
       type: String,
       enum: ["Male", "Female", "Non-binary", "Transgender", "Any", "Other"],
       default: 'Any',
     },
-    // --- END CHANGE ---
 
-    // --- NEW PREMIUM SUBSCRIPTION FIELDS ---
+    // Premium subscription fields
     isPremium: {
       type: Boolean,
       default: false,
     },
-    subscriptionTier: { // e.g., 'monthly', 'yearly', 'free'
+    subscriptionTier: {
       type: String,
       default: 'free',
     },
     subscriptionEndDate: {
       type: Date,
-      default: null, // Null means no active subscription or never subscribed
+      default: null,
     },
     isAdmin: {
       type: Boolean,
       default: false,
     },
-    paymentGatewayCustomerId: { // Store customer ID from Stripe/Razorpay etc.
+    paymentGatewayCustomerId: {
       type: String,
       default: null,
     },
-    // --- END NEW FIELDS ---
   },
   { timestamps: true }
 );

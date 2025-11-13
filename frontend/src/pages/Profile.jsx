@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import MultiStepProfile from "../components/MultiStepProfile";
 import ViewProfile from "../components/ViewProfile";
+import { Loader2 } from "lucide-react";
 
 export default function Profile() {
   const { user, refreshUser, loading } = useContext(AuthContext);
@@ -10,71 +11,47 @@ export default function Profile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // This effect runs when the user's data or loading state changes
-    if (loading) {
-      return; // Still loading, wait
-    }
+    if (loading) return;
 
     if (!user) {
-      // Not logged in, redirect to home
       navigate("/");
       return;
     }
 
-    // --- THIS IS THE CORE LOGIC ---
-    if (user.profileSetupComplete === false) {
-      // If setup is NOT complete, force them into editing mode.
+    if (!user.profileSetupComplete) {
       setIsEditing(true);
     } else {
-      // If setup IS complete, show them their profile.
       setIsEditing(false);
     }
-    
-  }, [user, loading, navigate]); // Rerun when these change
+  }, [user, loading, navigate]);
 
-  
-  // This function is passed to the MultiStepProfile component
   const handleSaveProfile = async () => {
-    // 1. Refresh user data from backend (this gets the new `profileSetupComplete: true`)
     await refreshUser();
-    // 2. Switch from editing mode back to view mode
-    setIsEditing(false); 
+    setIsEditing(false);
   };
 
-  // This function is passed to the ViewProfile component
   const handleEditProfile = () => {
-    setIsEditing(true); // Switch to editing mode
+    setIsEditing(true);
   };
 
-
-  // --- RENDER LOGIC ---
-
-  if (loading || !user) {
-    // Show a loading spinner or blank page while logic runs
+  if (loading) {
     return (
-      <div className="pt-32 text-center text-muted-foreground">
-        Loading Profile...
+      <div className="flex justify-center items-center h-screen pt-20">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
   }
 
-  // We are logged in, now decide what to show
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="container mx-auto px-4 py-12 pt-28"> 
-      {/* pt-28 added to account for your fixed navbar */}
-      
+    <div className="container mx-auto px-4 py-12 pt-28">
       {isEditing ? (
-        // RENDER 1: The Multi-Step Edit Form
-        <MultiStepProfile 
-          initialData={user} 
-          onSaved={handleSaveProfile} 
-        />
+        <MultiStepProfile initialData={user} onSaved={handleSaveProfile} />
       ) : (
-        // RENDER 2: The "View Profile" Component
-        <ViewProfile 
-          user={user} 
-          onEdit={handleEditProfile} 
-        />
+        <ViewProfile user={user} onEdit={handleEditProfile} />
       )}
     </div>
   );

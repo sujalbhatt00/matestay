@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-const AdminRoute = () => {
+const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -18,7 +18,7 @@ const AdminRoute = () => {
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet />;
+  return children;
 };
 
 export default AdminRoute;
