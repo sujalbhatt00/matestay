@@ -48,11 +48,8 @@ export const createReview = async (req, res) => {
     });
 
     await review.save();
-
-    // ✅ UPDATE: Recalculate user's average rating
     await updateUserRating(revieweeId);
 
-    // Populate the review before sending
     const populatedReview = await Review.findById(review._id)
       .populate("reviewer", "name profilePic")
       .populate("reviewee", "name");
@@ -110,8 +107,6 @@ export const updateReview = async (req, res) => {
     if (comment) review.comment = comment;
 
     await review.save();
-
-    // ✅ UPDATE: Recalculate user's average rating
     await updateUserRating(review.reviewee);
 
     const populatedReview = await Review.findById(review._id)
@@ -125,7 +120,7 @@ export const updateReview = async (req, res) => {
   }
 };
 
-// Delete a review
+// ✅ UPDATED: Delete a review (users can delete their own, admins can delete any)
 export const deleteReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
@@ -137,16 +132,21 @@ export const deleteReview = async (req, res) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    if (review.reviewer.toString() !== userId) {
-      return res.status(403).json({ message: "You can only delete your own reviews" });
+    //  Get user to check if they're admin
+    const user = await User.findById(userId);
+
+    // Check if user is the reviewer OR an admin
+    if (review.reviewer.toString() !== userId && !user.isAdmin) {
+      return res.status(403).json({ 
+        message: "You can only delete your own reviews" 
+      });
     }
 
     const revieweeId = review.reviewee;
     await Review.findByIdAndDelete(reviewId);
-
-    // ✅ UPDATE: Recalculate user's average rating
     await updateUserRating(revieweeId);
 
+    console.log(`✅ Review deleted by ${user.isAdmin ? 'admin' : 'user'}:`, reviewId);
     res.json({ message: "Review deleted successfully" });
   } catch (error) {
     console.error("Error deleting review:", error);

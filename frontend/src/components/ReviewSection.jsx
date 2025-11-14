@@ -5,8 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Loader2, Trash2, Edit } from 'lucide-react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Star, Loader2, Trash2, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 
 const defaultAvatar = 'https://i.imgur.com/6VBx3io.png';
 
@@ -84,27 +85,30 @@ const ReviewSection = ({ userId }) => {
 
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Are you sure you want to delete this review?')) return;
+
     try {
       await axios.delete(`/reviews/${reviewId}`);
       toast.success('Review deleted successfully');
       fetchReviews();
     } catch (error) {
-      toast.error('Failed to delete review');
+      toast.error(error.response?.data?.message || 'Failed to delete review');
     }
   };
 
   const renderStars = (count, interactive = false) => {
     return [...Array(5)].map((_, index) => {
-      const filled = interactive ? index < (hoveredRating || rating) : index < count;
+      const starValue = index + 1;
       return (
         <Star
           key={index}
-          className={`h-5 w-5 ${
-            filled ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-          } ${interactive ? 'cursor-pointer' : ''}`}
-          onClick={() => interactive && setRating(index + 1)}
-          onMouseEnter={() => interactive && setHoveredRating(index + 1)}
-          onMouseLeave={() => interactive && setHoveredRating(0)}
+          className={`h-5 w-5 cursor-pointer transition-colors ${
+            starValue <= (interactive ? hoveredRating || rating : count)
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-gray-300'
+          }`}
+          onClick={interactive ? () => setRating(starValue) : undefined}
+          onMouseEnter={interactive ? () => setHoveredRating(starValue) : undefined}
+          onMouseLeave={interactive ? () => setHoveredRating(0) : undefined}
         />
       );
     });
@@ -187,39 +191,60 @@ const ReviewSection = ({ userId }) => {
             </CardContent>
           </Card>
         ) : (
-          reviews.map((review) => (
-            <Card key={review._id}>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex gap-3">
-                    <Avatar>
-                      <AvatarImage src={review.reviewer.profilePic || defaultAvatar} />
-                      <AvatarFallback>{review.reviewer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold">{review.reviewer.name}</span>
-                        <div className="flex">{renderStars(review.rating)}</div>
+          reviews.map((review) => {
+            // ✅ Check if current user can delete this review
+            const canDelete = user && (
+              review.reviewer._id === user._id || // User's own review
+              user.isAdmin // Admin can delete any review
+            );
+
+            return (
+              <Card key={review._id}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-3 flex-1">
+                      <Avatar>
+                        <AvatarImage src={review.reviewer.profilePic || defaultAvatar} />
+                        <AvatarFallback>{review.reviewer.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-semibold">{review.reviewer.name}</span>
+                          <div className="flex">{renderStars(review.rating)}</div>
+                          {/* ✅ Show admin badge if reviewer is admin */}
+                          {review.reviewer._id === user?._id && user.isAdmin && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Admin
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm">{review.comment}</p>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm">{review.comment}</p>
                     </div>
+                    
+                    {/* ✅ Show delete button for own reviews and admins */}
+                    {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteReview(review._id)}
+                        title={user.isAdmin && review.reviewer._id !== user._id 
+                          ? "Delete as Admin" 
+                          : "Delete your review"
+                        }
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
-                  {user && review.reviewer._id === user._id && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteReview(review._id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>

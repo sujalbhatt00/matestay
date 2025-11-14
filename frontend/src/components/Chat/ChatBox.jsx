@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useChat } from '@/context/ChatContext';
+import { useNavigate } from 'react-router-dom';
+import axios from '@/api/axiosInstance';
+import { toast } from 'sonner';
+import ChatMessage from './ChatMessage';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Send, ArrowLeft, Crown, Loader2, MoreVertical, Info } from 'lucide-react';
-import ChatMessage from './ChatMessage';
-import axios from '@/api/axiosInstance';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { Send, Loader2, MessageSquare, ArrowLeft, Crown, AlertCircle, Check, Sparkles } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -31,50 +30,42 @@ const ChatBox = ({ currentChat, hasConversations }) => {
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const scrollRef = useRef();
   const navigate = useNavigate();
 
   const otherMember = currentChat?.members.find(m => m._id !== user._id);
   const MESSAGE_LIMIT = 10;
   const remainingMessages = Math.max(0, MESSAGE_LIMIT - userMessageCount);
+  const isLimitReached = !user?.isPremium && userMessageCount >= MESSAGE_LIMIT;
 
   useEffect(() => {
-    if (!currentChat?._id) {
-      setMessages([]);
-      setUserMessageCount(0);
-      return;
+    if (currentChat) {
+      const fetchMessages = async () => {
+        setIsLoadingMessages(true);
+        try {
+          const res = await axios.get(`/messages/${currentChat._id}`);
+          setMessages(res.data.messages || []);
+          setUserMessageCount(res.data.userMessageCount || 0);
+        } catch (error) {
+          console.error('Failed to fetch messages:', error);
+          toast.error('Could not load messages');
+        } finally {
+          setIsLoadingMessages(false);
+        }
+      };
+      fetchMessages();
     }
-
-    const fetchMessages = async () => {
-      setIsLoadingMessages(true);
-      try {
-        const res = await axios.get(`/messages/${currentChat._id}`);
-        setMessages(res.data.messages || []);
-        setUserMessageCount(res.data.userMessageCount || 0);
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-        toast.error("Failed to load messages");
-        setMessages([]);
-        setUserMessageCount(0);
-      } finally {
-        setIsLoadingMessages(false);
-      }
-    };
-
-    fetchMessages();
   }, [currentChat?._id]);
 
   useEffect(() => {
-    if (!socket || !currentChat) return;
+    if (!socket) return;
 
-    const handleIncomingMessage = (message) => {
-      if (message.conversationId === currentChat._id) {
-        setMessages(prev => {
-          if (prev.some(m => m._id === message._id)) return prev;
-          return [...prev, message];
-        });
-
-        setConversations(prevConvos => {
+    const handleGetMessage = (message) => {
+      if (message.conversationId === currentChat?._id) {
+        setMessages((prev) => [...prev, message]);
+        
+        setConversations((prevConvos) => {
           const convoIndex = prevConvos.findIndex(c => c._id === message.conversationId);
           if (convoIndex > -1) {
             const updatedConvo = {
@@ -90,77 +81,69 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       }
     };
 
-    socket.on("getMessage", handleIncomingMessage);
-    socket.on("receiveMessage", handleIncomingMessage);
+    socket.on("getMessage", handleGetMessage);
+    socket.on("receiveMessage", handleGetMessage);
 
     return () => {
-      socket.off("getMessage", handleIncomingMessage);
-      socket.off("receiveMessage", handleIncomingMessage);
+      socket.off("getMessage", handleGetMessage);
+      socket.off("receiveMessage", handleGetMessage);
     };
   }, [socket, currentChat, setConversations]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const messageText = newMessage.trim();
-    
-    if (!messageText || !otherMember || !currentChat) return;
 
-    if (!user.isPremium && userMessageCount >= MESSAGE_LIMIT) {
+    if (!newMessage.trim()) {
+      return;
+    }
+
+    if (isLimitReached) {
       setShowLimitDialog(true);
       return;
     }
 
-    if (isSending) return;
-
     setIsSending(true);
 
     try {
-      const tempMessage = {
-        _id: `temp-${Date.now()}`,
+      const messageData = {
         conversationId: currentChat._id,
-        senderId: user._id,
-        text: messageText,
-        createdAt: new Date().toISOString(),
+        text: newMessage,
       };
 
-      setMessages(prev => [...prev, tempMessage]);
-      setNewMessage("");
-      setUserMessageCount(prev => prev + 1);
+      const res = await axios.post('/messages', messageData);
 
-      const response = await axios.post('/messages', {
-        conversationId: currentChat._id,
-        text: messageText,
-      });
-
-      setMessages(prev => 
-        prev.map(msg => 
-          msg._id === tempMessage._id ? response.data : msg
-        )
-      );
-
-      if (socket && socket.connected) {
-        const socketMessage = {
-          ...response.data,
-          senderId: user._id,
-          receiverId: otherMember._id,
-          conversationId: currentChat._id,
-        };
-        
-        socket.emit("sendMessage", socketMessage);
+      if (res.data.limitReached) {
+        toast.error('Message limit reached. Upgrade to premium for unlimited messaging.');
+        setShowLimitDialog(true);
+        setUserMessageCount(MESSAGE_LIMIT);
+        return;
       }
 
-      setConversations(prevConvos => {
+      const savedMessage = res.data;
+
+      setMessages((prev) => [...prev, savedMessage]);
+      setUserMessageCount((prev) => prev + 1);
+      setNewMessage("");
+
+      if (socket) {
+        socket.emit("sendMessage", {
+          ...savedMessage,
+          receiverId: otherMember._id,
+          senderId: user._id,
+        });
+      }
+
+      setConversations((prevConvos) => {
         const convoIndex = prevConvos.findIndex(c => c._id === currentChat._id);
         if (convoIndex > -1) {
           const updatedConvo = {
             ...prevConvos[convoIndex],
-            lastMessage: messageText,
-            lastMessageTimestamp: response.data.createdAt,
+            lastMessage: savedMessage.text,
+            lastMessageTimestamp: savedMessage.createdAt,
           };
           const otherConvos = prevConvos.filter((_, i) => i !== convoIndex);
           return [updatedConvo, ...otherConvos];
@@ -169,216 +152,401 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       });
 
     } catch (error) {
-      console.error("Failed to send message:", error);
-      
-      setMessages(prev => prev.filter(msg => !msg._id.startsWith('temp-')));
-      setUserMessageCount(prev => Math.max(0, prev - 1));
+      console.error('Failed to send message:', error);
       
       if (error.response?.data?.limitReached) {
+        toast.error('Message limit reached. Upgrade to premium for unlimited messaging.');
         setShowLimitDialog(true);
+        setUserMessageCount(MESSAGE_LIMIT);
       } else {
-        toast.error(error.response?.data?.message || "Failed to send message");
+        toast.error('Failed to send message. Please try again.');
       }
     } finally {
       setIsSending(false);
     }
   };
 
+  // ✅ NEW: Handle Razorpay payment
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleUpgradeClick = async (planType) => {
+    setProcessingPayment(true);
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      
+      if (!scriptLoaded) {
+        toast.error('Failed to load payment gateway. Please try again.');
+        setProcessingPayment(false);
+        return;
+      }
+
+      const { data: orderData } = await axios.post('/payments/create-order', {
+        plan: planType,
+      });
+
+      if (!orderData.keyId || !orderData.orderId) {
+        toast.error('Payment configuration error. Please try again.');
+        setProcessingPayment(false);
+        return;
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Matestay Premium',
+        description: `${planType === 'monthly' ? 'Monthly' : 'Yearly'} Premium Subscription`,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await axios.post('/payments/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (verifyRes.data.isPremium) {
+              toast.success('🎉 Payment successful! You are now a Premium member!');
+              setShowLimitDialog(false);
+              
+              // Refresh user data
+              const { data: userData } = await axios.get('/user/profile');
+              if (userData) {
+                localStorage.setItem('matestay_user', JSON.stringify(userData));
+                window.location.reload(); // Reload to update user context
+              }
+            }
+          } catch (error) {
+            console.error('Payment verification failed:', error);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: {
+          color: '#5b5dda',
+        },
+        modal: {
+          ondismiss: function() {
+            setProcessingPayment(false);
+            toast.info('Payment cancelled');
+          }
+        }
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.open();
+      setProcessingPayment(false);
+
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+      setProcessingPayment(false);
+    }
+  };
+
   if (!currentChat) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-gradient-to-br from-background to-muted/20">
-        <div className="max-w-md space-y-4">
-          <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
-            <MessageSquare className="h-10 w-10 text-primary" />
-          </div>
-          <h3 className="text-2xl font-semibold text-foreground">
-            {hasConversations ? "Select a conversation" : "Welcome to Messages"}
-          </h3>
-          <p className="text-muted-foreground">
-            {hasConversations 
-              ? "Choose a conversation from the list to start chatting" 
-              : "Find a roommate or property to begin a conversation!"}
-          </p>
+      <div className="flex flex-col items-center justify-center h-full bg-background p-8 text-center">
+        <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mb-6">
+          <MessageSquare className="h-10 w-10 text-primary" />
         </div>
+        <h3 className="text-2xl font-semibold mb-3 text-foreground">
+          {hasConversations ? 'Select a conversation' : 'No conversations yet'}
+        </h3>
+        <p className="text-muted-foreground max-w-md mb-6">
+          {hasConversations 
+            ? 'Choose a conversation from the list to start messaging'
+            : 'Find a roommate or property to start chatting!'
+          }
+        </p>
+        {!hasConversations && (
+          <div className="flex gap-3">
+            <Button onClick={() => navigate('/find-roommates')} variant="outline">
+              Find Roommates
+            </Button>
+            <Button onClick={() => navigate('/properties/search')}>
+              Browse Properties
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <>
-      <div className="flex flex-col h-full bg-background">
-        {/* ✅ MODERN HEADER */}
-        <div className="flex items-center gap-3 p-4 border-b bg-card/50 backdrop-blur-sm shadow-sm">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden -ml-2"
-            onClick={() => navigate('/chat')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          
-          <div 
-            className="flex items-center gap-3 flex-1 cursor-pointer hover:bg-muted/50 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4 border-b bg-card shadow-sm">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/chat')}
+          className="md:hidden"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        
+        <Avatar 
+          className="h-10 w-10 ring-2 ring-background cursor-pointer"
+          onClick={() => navigate(`/profile/${otherMember._id}`)}
+        >
+          <AvatarImage src={otherMember?.profilePic || defaultAvatar} alt={otherMember?.name} />
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+            {otherMember?.name?.charAt(0).toUpperCase() || '?'}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <h3 
+            className="font-semibold text-foreground truncate cursor-pointer hover:underline"
             onClick={() => navigate(`/profile/${otherMember._id}`)}
           >
-            <Avatar className="h-11 w-11 ring-2 ring-primary/10">
-              <AvatarImage src={otherMember?.profilePic || defaultAvatar} alt={otherMember?.name} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {otherMember?.name?.charAt(0) || '?'}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate">
-                {otherMember?.name}
-              </h3>
-              <p className="text-xs text-muted-foreground truncate">
-                {otherMember?.occupation || 'User'}
-              </p>
-            </div>
+            {otherMember?.name || 'Unknown User'}
+          </h3>
+          <p className="text-xs text-muted-foreground">Click to view profile</p>
+        </div>
+
+        {!user?.isPremium && (
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted">
+            <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-muted-foreground'}`}>
+              {isLimitReached ? 'Limit reached' : `${remainingMessages}/${MESSAGE_LIMIT} left`}
+            </span>
+            {isLimitReached && (
+              <Crown className="h-4 w-4 text-yellow-500" />
+            )}
           </div>
-          
-          {!user.isPremium && (
-            <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 px-3 py-1.5 rounded-full border border-yellow-500/20">
-              <Info className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-500" />
-              <span className={`text-xs font-semibold whitespace-nowrap ${
-                remainingMessages <= 3 
-                  ? 'text-red-600 dark:text-red-500' 
-                  : 'text-yellow-600 dark:text-yellow-500'
-              }`}>
-                {remainingMessages} left
-              </span>
-            </div>
-          )}
-        </div>
-        
-        {/* ✅ MODERN MESSAGES AREA */}
-        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/20 to-background p-4 space-y-2">
-          {isLoadingMessages ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="text-center space-y-3">
-                <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                <p className="text-sm text-muted-foreground">Loading messages...</p>
-              </div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
-                <MessageSquare className="h-8 w-8 text-primary" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-lg font-medium">No messages yet</p>
-                <p className="text-sm text-muted-foreground">Start the conversation with {otherMember?.name}!</p>
-              </div>
-            </div>
-          ) : (
-            messages.map((msg, index) => (
-              <div key={msg._id || `msg-${index}`} ref={index === messages.length - 1 ? scrollRef : null}>
-                <ChatMessage message={msg} isOwnMessage={msg.senderId === user._id} />
-              </div>
-            ))
-          )}
-        </div>
-        
-        {/* ✅ MODERN INPUT AREA */}
-        <div className="p-4 border-t bg-card/50 backdrop-blur-sm">
-          <form onSubmit={handleSubmit} className="flex items-end gap-2">
-            <div className="flex-1 relative">
-              <Input
-                type="text"
-                placeholder={isSending ? "Sending..." : "Type your message..."}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                disabled={isSending}
-                className="pr-10 py-6 rounded-2xl border-2 focus-visible:ring-2 focus-visible:ring-primary/50 bg-background"
-                autoComplete="off"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              size="icon"
-              disabled={!newMessage.trim() || isSending}
-              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
-            >
-              {isSending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
-            </Button>
-          </form>
-          
-          {/* Message limit warning */}
-          {!user.isPremium && remainingMessages <= 3 && (
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              ⚠️ Only {remainingMessages} messages left. 
-              <button 
-                onClick={() => navigate('/premium')} 
-                className="text-primary hover:underline ml-1 font-medium"
-              >
-                Upgrade to Premium
-              </button>
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Premium Upgrade Dialog */}
-      <AlertDialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
+      {!user?.isPremium && remainingMessages <= 3 && remainingMessages > 0 && (
+        <Alert className="m-4 border-yellow-500/50 bg-yellow-500/10">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-sm">
+            You have {remainingMessages} {remainingMessages === 1 ? 'message' : 'messages'} left in this conversation.{' '}
+            <Button
+              variant="link"
+              className="h-auto p-0 text-yellow-500 hover:text-yellow-600"
+              onClick={() => setShowLimitDialog(true)}
+            >
+              Upgrade to Premium
+            </Button>
+            {' '}for unlimited messaging.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isLimitReached && (
+        <Alert className="m-4 border-red-500/50 bg-red-500/10">
+          <Crown className="h-4 w-4 text-red-500" />
+          <AlertDescription className="text-sm">
+            You've reached your message limit for this conversation.{' '}
+            <Button
+              variant="link"
+              className="h-auto p-0 text-red-500 hover:text-red-600 font-semibold"
+              onClick={() => setShowLimitDialog(true)}
+            >
+              Upgrade to Premium (₹1/month)
+            </Button>
+            {' '}to continue chatting.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        {isLoadingMessages ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+              <MessageSquare className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-muted-foreground mb-2">No messages yet</p>
+            <p className="text-sm text-muted-foreground">Start the conversation!</p>
+          </div>
+        ) : (
+          <>
+            {messages.map((msg) => (
+              <ChatMessage 
+                key={msg._id} 
+                message={msg} 
+                isOwnMessage={msg.senderId === user._id} 
+              />
+            ))}
+            <div ref={scrollRef} />
+          </>
+        )}
+      </div>
+
+      {/* Input Area */}
+      <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
+        <div className="flex gap-2 items-center">
+          <Input
+            type="text"
+            placeholder={isLimitReached ? "Upgrade to Premium to continue..." : "Type a message..."}
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            disabled={isSending || isLimitReached}
+            className="flex-1 bg-background"
+          />
+          <Button 
+            type="submit" 
+            size="icon" 
+            disabled={isSending || !newMessage.trim() || isLimitReached}
+            className="bg-[#5b5dda] hover:bg-[#4a4ab5] flex-shrink-0"
+          >
+            {isSending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+      </form>
+
+      {/* ✅ NEW: Premium Upgrade Payment Dialog */}
+      <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                <Crown className="h-8 w-8 text-white" />
+              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-full">
+                <Crown className="h-12 w-12 text-white" />
               </div>
             </div>
-            <AlertDialogTitle className="text-center text-2xl">
-              Message Limit Reached
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4 text-center">
-              <p className="text-base">
-                You've reached your free limit of <span className="font-bold">{MESSAGE_LIMIT} messages</span> per conversation.
-              </p>
-              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-xl p-6 space-y-3">
-                <p className="font-bold text-yellow-800 dark:text-yellow-400 text-lg flex items-center justify-center gap-2">
-                  <Crown className="h-5 w-5" />
-                  Upgrade to Premium - Only ₹1/month!
-                </p>
-                <ul className="text-sm text-left space-y-2">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div>
-                    <span>✨ Unlimited messaging</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div>
-                    <span>🎯 Priority support</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div>
-                    <span>⭐ Featured profile</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div>
-                    <span>🚫 Ad-free experience</span>
-                  </li>
-                </ul>
+            <DialogTitle className="text-center text-3xl">Upgrade to Premium</DialogTitle>
+            <DialogDescription className="text-center text-base">
+              You've used all your free messages. Choose a plan to continue chatting!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid md:grid-cols-2 gap-4 my-4">
+            {/* Monthly Plan */}
+            <div className="border-2 border-primary/20 rounded-xl p-6 hover:border-primary transition-all">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold mb-2">Monthly</h3>
+                <div className="text-4xl font-bold text-primary">₹1</div>
+                <p className="text-sm text-muted-foreground">per month</p>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto">Maybe Later</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => navigate('/premium')} 
-              className="w-full sm:w-auto bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg"
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Unlimited messaging</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Featured profile</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Priority support</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Ad-free experience</span>
+                </li>
+              </ul>
+              <Button 
+                onClick={() => handleUpgradeClick('monthly')}
+                disabled={processingPayment}
+                className="w-full"
+                variant="outline"
+              >
+                {processingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Choose Monthly
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Yearly Plan */}
+            <div className="border-2 border-primary rounded-xl p-6 bg-primary/5 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  SAVE ₹2
+                </span>
+              </div>
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold mb-2">Yearly</h3>
+                <div className="text-4xl font-bold text-primary">₹10</div>
+                <p className="text-sm text-muted-foreground">per year</p>
+                <p className="text-xs text-green-600 font-semibold mt-1">Save 17%</p>
+              </div>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Everything in Monthly</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Exclusive yearly badge</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Early access to features</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Priority listing placement</span>
+                </li>
+              </ul>
+              <Button 
+                onClick={() => handleUpgradeClick('yearly')}
+                disabled={processingPayment}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+              >
+                {processingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Crown className="mr-2 h-4 w-4" />
+                    Choose Yearly
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p>✓ Secure payment via Razorpay</p>
+            <p>✓ Cancel anytime</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowLimitDialog(false)}
+              className="w-full"
             >
-              <Crown className="mr-2 h-4 w-4" />
-              Upgrade Now
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+              Maybe Later
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

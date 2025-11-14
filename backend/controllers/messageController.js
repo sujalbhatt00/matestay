@@ -10,6 +10,7 @@ export const addMessage = async (req, res) => {
   try {
     const sender = await User.findById(senderId);
     
+    // ✅ UPDATED: Check if user has premium (includes admins who auto-get premium)
     if (!sender.isPremium) {
       const messageCount = await Message.countDocuments({
         conversationId,
@@ -28,7 +29,7 @@ export const addMessage = async (req, res) => {
       conversationId,
       senderId,
       text,
-      readBy: [senderId], // ✅ Sender has automatically read their own message
+      readBy: [senderId],
     });
 
     const savedMessage = await newMessage.save();
@@ -54,12 +55,11 @@ export const getMessages = async (req, res) => {
       conversationId,
     });
 
-    // ✅ NEW: Mark all messages in this conversation as read by this user
     await Message.updateMany(
       {
         conversationId,
-        senderId: { $ne: userId }, // Don't update sender's own messages
-        readBy: { $ne: userId }, // Only update if not already read
+        senderId: { $ne: userId },
+        readBy: { $ne: userId },
       },
       {
         $addToSet: { readBy: userId },
@@ -78,19 +78,17 @@ export const getMessages = async (req, res) => {
   }
 };
 
-// ✅ NEW: Get unread message count for a user
+// Get unread message count for a user
 export const getUnreadCount = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find all conversations for this user
     const conversations = await Conversation.find({
       members: userId,
     });
 
     const conversationIds = conversations.map(c => c._id);
 
-    // Count unread messages across all conversations
     const unreadCount = await Message.countDocuments({
       conversationId: { $in: conversationIds },
       senderId: { $ne: userId },
@@ -104,7 +102,7 @@ export const getUnreadCount = async (req, res) => {
   }
 };
 
-// ✅ NEW: Get unread messages by conversation
+// Get unread messages by conversation
 export const getUnreadMessagesByConversation = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -136,7 +134,6 @@ export const getUnreadMessagesByConversation = async (req, res) => {
       })
     );
 
-    // Filter out conversations with no unread messages
     const filteredUnread = unreadByConversation.filter(item => item.unreadCount > 0);
 
     res.json(filteredUnread);

@@ -38,8 +38,8 @@ const ChatPage = () => {
   }
 
   return (
-    // ✅ FIX: Proper height calculation with navbar spacing
-    <div className="fixed inset-0 flex bg-background">
+    // ✅ FIX: Changed z-index to be below navbar (z-50 is navbar)
+    <div className="fixed inset-0 flex bg-background z-30">
       {/* Add spacing for desktop navbar (80px) and mobile (64px + 64px for bottom nav) */}
       <div className="w-full h-full pt-20 pb-16 md:pb-0 flex">
         {/* Conversation List */}

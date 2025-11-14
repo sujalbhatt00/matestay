@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Property from "../models/Property.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
+import Review from "../models/Review.js";
 
 // Get Dashboard Stats
 export const getDashboardStats = async (req, res) => {
@@ -11,8 +12,8 @@ export const getDashboardStats = async (req, res) => {
     const totalProperties = await Property.countDocuments();
     const totalConversations = await Conversation.countDocuments();
     const totalMessages = await Message.countDocuments();
+    const totalReviews = await Review.countDocuments();
 
-    // Get recent users (last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const newUsers = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
 
@@ -22,6 +23,7 @@ export const getDashboardStats = async (req, res) => {
       totalProperties,
       totalConversations,
       totalMessages,
+      totalReviews,
       newUsers,
     });
   } catch (error) {
@@ -51,25 +53,31 @@ export const deleteUserAdmin = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prevent deleting admin accounts
+    // ✅ Prevent deleting admin accounts
     if (user.isAdmin) {
       return res.status(400).json({ message: "Cannot delete admin accounts" });
     }
 
+    console.log("🧹 Starting cleanup for user:", user.email);
+
     // Delete user's properties
     await Property.deleteMany({ lister: userId });
 
-    // Find all conversations the user is a part of
+    // Find all conversations
     const userConversations = await Conversation.find({ members: userId });
     const conversationIds = userConversations.map(c => c._id);
 
-    // Delete messages in those conversations
+    // Delete messages
     if (conversationIds.length > 0) {
       await Message.deleteMany({ conversationId: { $in: conversationIds } });
     }
 
-    // Delete the conversations themselves
+    // Delete conversations
     await Conversation.deleteMany({ _id: { $in: conversationIds } });
+
+    // ✅ Delete reviews written by and about this user
+    await Review.deleteMany({ $or: [{ reviewer: userId }, { reviewee: userId }] });
+    console.log("✅ Reviews deleted");
 
     // Delete the user
     await User.findByIdAndDelete(userId);

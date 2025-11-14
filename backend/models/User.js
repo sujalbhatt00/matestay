@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
       default: 'Any',
     },
 
-    // ✅ NEW: Review fields
+    // Review fields
     averageRating: {
       type: Number,
       default: 0,
@@ -64,5 +64,18 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+
+userSchema.pre('save', function(next) {
+  if (this.isAdmin) {
+    this.isPremium = true;
+    this.subscriptionTier = 'admin';
+
+    if (!this.subscriptionEndDate) {
+      this.subscriptionEndDate = new Date('2099-12-31');
+    }
+  }
+  next();
+});
 
 export default mongoose.model("User", userSchema);
