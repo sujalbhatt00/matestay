@@ -23,7 +23,7 @@ const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
 const ChatBox = ({ currentChat, hasConversations }) => {
   const { user } = useAuth();
-  const { socket, setConversations } = useChat();
+  const { socket, setConversations, onlineUsers } = useChat();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -38,6 +38,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
   const MESSAGE_LIMIT = 10;
   const remainingMessages = Math.max(0, MESSAGE_LIMIT - userMessageCount);
   const isLimitReached = !user?.isPremium && userMessageCount >= MESSAGE_LIMIT;
+  const isOnline = onlineUsers?.some(u => u.userId === otherMember?._id);
 
   useEffect(() => {
     if (currentChat) {
@@ -264,7 +265,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
   return (
     <div className="flex flex-col h-full w-full bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm">
+      <div className="sticky top-0 z-20 bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -273,26 +274,35 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <Avatar
-          className="h-10 w-10 ring-2 ring-background cursor-pointer"
+        <div
+          className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate(`/profile/${otherMember._id}`)}
         >
-          <AvatarImage src={otherMember?.profilePic || defaultAvatar} alt={otherMember?.name} />
-          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-            {otherMember?.name?.charAt(0).toUpperCase() || '?'}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <h3
-            className="font-semibold text-foreground truncate cursor-pointer hover:underline"
-            onClick={() => navigate(`/profile/${otherMember._id}`)}
-          >
-            {otherMember?.name || 'Unknown User'}
-          </h3>
-          <p className="text-xs text-muted-foreground">Click to view profile</p>
+          <Avatar className="h-11 w-11 ring-2 ring-primary/10">
+            <AvatarImage src={otherMember?.profilePic || defaultAvatar} alt={otherMember?.name} />
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              {otherMember?.name?.charAt(0).toUpperCase() || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col min-w-0">
+            <span className="font-semibold text-foreground truncate hover:underline">
+              {otherMember?.name || "Unknown User"}
+            </span>
+            <span className="text-xs text-muted-foreground truncate">
+              {otherMember?.occupation || "No occupation"}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-semibold ${isOnline ? "text-green-600" : "text-muted-foreground"}`}>
+                {isOnline ? "Online" : "Offline"}
+              </span>
+              {otherMember?.location && (
+                <span className="text-xs text-muted-foreground">{otherMember.location}</span>
+              )}
+            </div>
+          </div>
         </div>
         {!user?.isPremium && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted ml-auto">
             <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-muted-foreground'}`}>
               {isLimitReached ? 'Limit reached' : `${remainingMessages}/${MESSAGE_LIMIT} left`}
             </span>

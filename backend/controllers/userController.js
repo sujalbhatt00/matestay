@@ -168,8 +168,8 @@ export const getAllUsers = async (req, res) => {
     const { gender } = req.query;
 
     const query = {
-      profileSetupComplete: true, 
-      _id: { $ne: req.user.id } 
+      profileSetupComplete: true
+      // _id: { $ne: req.user.id } // <-- Removed to include the logged-in user
     };
 
     if (gender && gender !== 'Any') {

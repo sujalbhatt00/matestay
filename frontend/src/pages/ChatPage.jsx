@@ -38,11 +38,11 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="flex bg-background min-h-[calc(100vh-80px)]">
+    <div className="flex bg-background min-h-[calc(100vh-80px)] z-40 relative">
       {/* WhatsApp-like layout: sidebar and chat */}
       <div className="flex w-full h-[calc(100vh-80px)]">
         {/* Sidebar */}
-        <div className={`hidden md:flex md:w-1/3 lg:w-1/4 border-r flex-col bg-card`}>
+        <div className="hidden md:flex md:w-1/3 lg:w-1/4 border-r flex-col bg-card">
           <ConvoList
             conversations={conversations}
             onSelectConversation={handleSelectConversation}
