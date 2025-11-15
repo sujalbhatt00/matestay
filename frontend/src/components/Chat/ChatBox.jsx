@@ -64,7 +64,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
     const handleGetMessage = (message) => {
       if (message.conversationId === currentChat?._id) {
         setMessages((prev) => [...prev, message]);
-        
         setConversations((prevConvos) => {
           const convoIndex = prevConvos.findIndex(c => c._id === message.conversationId);
           if (convoIndex > -1) {
@@ -96,39 +95,28 @@ const ChatBox = ({ currentChat, hasConversations }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!newMessage.trim()) {
-      return;
-    }
-
+    if (!newMessage.trim()) return;
     if (isLimitReached) {
       setShowLimitDialog(true);
       return;
     }
-
     setIsSending(true);
-
     try {
       const messageData = {
         conversationId: currentChat._id,
         text: newMessage,
       };
-
       const res = await axios.post('/messages', messageData);
-
       if (res.data.limitReached) {
         toast.error('Message limit reached. Upgrade to premium for unlimited messaging.');
         setShowLimitDialog(true);
         setUserMessageCount(MESSAGE_LIMIT);
         return;
       }
-
       const savedMessage = res.data;
-
       setMessages((prev) => [...prev, savedMessage]);
       setUserMessageCount((prev) => prev + 1);
       setNewMessage("");
-
       if (socket) {
         socket.emit("sendMessage", {
           ...savedMessage,
@@ -136,7 +124,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
           senderId: user._id,
         });
       }
-
       setConversations((prevConvos) => {
         const convoIndex = prevConvos.findIndex(c => c._id === currentChat._id);
         if (convoIndex > -1) {
@@ -150,10 +137,8 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         }
         return prevConvos;
       });
-
     } catch (error) {
       console.error('Failed to send message:', error);
-      
       if (error.response?.data?.limitReached) {
         toast.error('Message limit reached. Upgrade to premium for unlimited messaging.');
         setShowLimitDialog(true);
@@ -166,7 +151,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
     }
   };
 
-  // ✅ NEW: Handle Razorpay payment
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -179,26 +163,21 @@ const ChatBox = ({ currentChat, hasConversations }) => {
 
   const handleUpgradeClick = async (planType) => {
     setProcessingPayment(true);
-
     try {
       const scriptLoaded = await loadRazorpayScript();
-      
       if (!scriptLoaded) {
         toast.error('Failed to load payment gateway. Please try again.');
         setProcessingPayment(false);
         return;
       }
-
       const { data: orderData } = await axios.post('/payments/create-order', {
         plan: planType,
       });
-
       if (!orderData.keyId || !orderData.orderId) {
         toast.error('Payment configuration error. Please try again.');
         setProcessingPayment(false);
         return;
       }
-
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,
@@ -213,16 +192,13 @@ const ChatBox = ({ currentChat, hasConversations }) => {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-
             if (verifyRes.data.isPremium) {
               toast.success('🎉 Payment successful! You are now a Premium member!');
               setShowLimitDialog(false);
-              
-              // Refresh user data
               const { data: userData } = await axios.get('/user/profile');
               if (userData) {
                 localStorage.setItem('matestay_user', JSON.stringify(userData));
-                window.location.reload(); // Reload to update user context
+                window.location.reload();
               }
             }
           } catch (error) {
@@ -244,11 +220,9 @@ const ChatBox = ({ currentChat, hasConversations }) => {
           }
         }
       };
-
       const razorpayInstance = new window.Razorpay(options);
       razorpayInstance.open();
       setProcessingPayment(false);
-
     } catch (error) {
       console.error('Payment initiation error:', error);
       toast.error('Failed to initiate payment. Please try again.');
@@ -285,10 +259,12 @@ const ChatBox = ({ currentChat, hasConversations }) => {
     );
   }
 
+  // --- WhatsApp-like UI update below ---
+
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full w-full bg-background">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-card shadow-sm">
+      <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -297,8 +273,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        
-        <Avatar 
+        <Avatar
           className="h-10 w-10 ring-2 ring-background cursor-pointer"
           onClick={() => navigate(`/profile/${otherMember._id}`)}
         >
@@ -307,9 +282,8 @@ const ChatBox = ({ currentChat, hasConversations }) => {
             {otherMember?.name?.charAt(0).toUpperCase() || '?'}
           </AvatarFallback>
         </Avatar>
-
         <div className="flex-1 min-w-0">
-          <h3 
+          <h3
             className="font-semibold text-foreground truncate cursor-pointer hover:underline"
             onClick={() => navigate(`/profile/${otherMember._id}`)}
           >
@@ -317,7 +291,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
           </h3>
           <p className="text-xs text-muted-foreground">Click to view profile</p>
         </div>
-
         {!user?.isPremium && (
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted">
             <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-muted-foreground'}`}>
@@ -330,6 +303,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         )}
       </div>
 
+      {/* Alerts for message limit */}
       {!user?.isPremium && remainingMessages <= 3 && remainingMessages > 0 && (
         <Alert className="m-4 border-yellow-500/50 bg-yellow-500/10">
           <AlertCircle className="h-4 w-4 text-yellow-500" />
@@ -346,7 +320,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
           </AlertDescription>
         </Alert>
       )}
-
       {isLimitReached && (
         <Alert className="m-4 border-red-500/50 bg-red-500/10">
           <Crown className="h-4 w-4 text-red-500" />
@@ -365,7 +338,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-2 md:px-4 py-2 md:py-4 space-y-3 custom-scrollbar bg-background">
         {isLoadingMessages ? (
           <div className="flex justify-center items-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -381,10 +354,10 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         ) : (
           <>
             {messages.map((msg) => (
-              <ChatMessage 
-                key={msg._id} 
-                message={msg} 
-                isOwnMessage={msg.senderId === user._id} 
+              <ChatMessage
+                key={msg._id}
+                message={msg}
+                isOwnMessage={msg.senderId === user._id}
               />
             ))}
             <div ref={scrollRef} />
@@ -393,7 +366,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       </div>
 
       {/* Input Area */}
-      <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
+      <form onSubmit={handleSubmit} className="px-2 md:px-4 py-3 border-t bg-card">
         <div className="flex gap-2 items-center">
           <Input
             type="text"
@@ -402,10 +375,11 @@ const ChatBox = ({ currentChat, hasConversations }) => {
             onChange={(e) => setNewMessage(e.target.value)}
             disabled={isSending || isLimitReached}
             className="flex-1 bg-background"
+            autoComplete="off"
           />
-          <Button 
-            type="submit" 
-            size="icon" 
+          <Button
+            type="submit"
+            size="icon"
             disabled={isSending || !newMessage.trim() || isLimitReached}
             className="bg-[#5b5dda] hover:bg-[#4a4ab5] flex-shrink-0"
           >
@@ -418,7 +392,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         </div>
       </form>
 
-      {/* ✅ NEW: Premium Upgrade Payment Dialog */}
+      {/* Premium Upgrade Payment Dialog */}
       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -432,7 +406,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
               You've used all your free messages. Choose a plan to continue chatting!
             </DialogDescription>
           </DialogHeader>
-          
           <div className="grid md:grid-cols-2 gap-4 my-4">
             {/* Monthly Plan */}
             <div className="border-2 border-primary/20 rounded-xl p-6 hover:border-primary transition-all">
@@ -459,7 +432,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
                   <span>Ad-free experience</span>
                 </li>
               </ul>
-              <Button 
+              <Button
                 onClick={() => handleUpgradeClick('monthly')}
                 disabled={processingPayment}
                 className="w-full"
@@ -478,7 +451,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
                 )}
               </Button>
             </div>
-
             {/* Yearly Plan */}
             <div className="border-2 border-primary rounded-xl p-6 bg-primary/5 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -510,7 +482,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
                   <span>Priority listing placement</span>
                 </li>
               </ul>
-              <Button 
+              <Button
                 onClick={() => handleUpgradeClick('yearly')}
                 disabled={processingPayment}
                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
@@ -529,12 +501,10 @@ const ChatBox = ({ currentChat, hasConversations }) => {
               </Button>
             </div>
           </div>
-
           <div className="text-center text-sm text-muted-foreground">
             <p>✓ Secure payment via Razorpay</p>
             <p>✓ Cancel anytime</p>
           </div>
-
           <DialogFooter>
             <Button
               variant="ghost"

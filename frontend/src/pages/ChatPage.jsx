@@ -38,26 +38,27 @@ const ChatPage = () => {
   }
 
   return (
-    // Remove 'fixed' and 'z-30' so chat does not overlay the navbar/footer
     <div className="flex bg-background min-h-[calc(100vh-80px)]">
-      <div className="w-full h-full pt-20 pb-16 md:pb-0 flex">
-        {/* Conversation List */}
-        <div className={`w-full md:w-1/3 lg:w-1/4 border-r ${conversationId ? 'hidden md:flex' : 'flex'} flex-col bg-card`}>
-          {loadingConversations ? (
-            <div className="flex justify-center items-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <ConvoList
-              conversations={conversations}
-              onSelectConversation={handleSelectConversation}
-              currentChatId={currentChat?._id}
-            />
-          )}
+      {/* WhatsApp-like layout: sidebar and chat */}
+      <div className="flex w-full h-[calc(100vh-80px)]">
+        {/* Sidebar */}
+        <div className={`hidden md:flex md:w-1/3 lg:w-1/4 border-r flex-col bg-card`}>
+          <ConvoList
+            conversations={conversations}
+            onSelectConversation={handleSelectConversation}
+            currentChatId={currentChat?._id}
+          />
         </div>
-
-        {/* Chat Box */}
-        <div className={`w-full md:w-2/3 lg:w-3/4 ${conversationId ? 'flex' : 'hidden md:flex'} flex-col bg-background`}>
+        {/* Mobile: show sidebar if no chat selected */}
+        <div className={`flex md:hidden w-full ${conversationId ? 'hidden' : 'flex'}`}>
+          <ConvoList
+            conversations={conversations}
+            onSelectConversation={handleSelectConversation}
+            currentChatId={currentChat?._id}
+          />
+        </div>
+        {/* Chat window */}
+        <div className={`flex flex-col w-full md:w-2/3 lg:w-3/4 bg-background ${conversationId ? 'flex' : 'hidden md:flex'}`}>
           <ChatBox
             key={currentChat?._id}
             currentChat={currentChat}
