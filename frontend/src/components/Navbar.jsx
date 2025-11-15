@@ -23,10 +23,9 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { user, logout } = useContext(AuthContext);
-  const { notifications, unreadCount } = useChat(); // ✅ Get persistent unreadCount
+  const { unreadCount } = useChat(); // Only use unreadCount for notification badge
   const navigate = useNavigate();
 
-  // ✅ Use persistent unread count from ChatContext
   const displayUnreadCount = unreadCount || 0;
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
