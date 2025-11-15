@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
 import { ThemeProvider } from "./components/theme-provider";
@@ -15,14 +15,92 @@ import CreatePropertyPage from "./pages/CreatePropertyPage";
 import MyListingsPage from "./pages/MyListingsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
 import PropertiesSearchPage from "./pages/PropertiesSearchPage";
-import LocationSearchPage from "./pages/LocationSearchPage"; // ✅ NEW IMPORT
-import AllPropertiesPage from "./pages/AllPropertiesPage"; // ✅ NEW IMPORT
+import LocationSearchPage from "./pages/LocationSearchPage";
+import AllPropertiesPage from "./pages/AllPropertiesPage";
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "./pages/AdminDashboard";
 import PremiumPage from "./pages/PremiumPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import FloatingChatButton from "./components/FloatingChatButton";
+
+// Helper to force remount on route change
+function MainContent() {
+  const location = useLocation();
+  return (
+    <main className="flex-grow" key={location.pathname}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/find-roommates" element={<FindRoommate />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/profile/:userId" element={<PublicProfilePage />} />
+        <Route path="/properties/:id" element={<PropertyDetailPage />} />
+        <Route path="/search" element={<LocationSearchPage />} />
+        <Route path="/properties/all" element={<AllPropertiesPage />} />
+        <Route path="/properties/search" element={<PropertiesSearchPage />} />
+        {/* Protected Routes */}
+        <Route 
+          path="/chat" 
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chat/:conversationId" 
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/create-listing" 
+          element={
+            <ProtectedRoute>
+              <CreatePropertyPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/my-listings" 
+          element={
+            <ProtectedRoute>
+              <MyListingsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/premium" 
+          element={
+            <ProtectedRoute>
+              <PremiumPage />
+            </ProtectedRoute>
+          } 
+        />
+        {/* Admin Routes */}
+        <Route 
+          path="/admin" 
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } 
+        />
+      </Routes>
+    </main>
+  );
+}
 
 function App() {
   return (
@@ -32,85 +110,7 @@ function App() {
           <Router>
             <div className="flex flex-col min-h-screen">
               <Navbar />
-              <main className="flex-grow">
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Home />} />
-                  <Route path="/find-roommates" element={<FindRoommate />} />
-                  <Route path="/verify-email" element={<VerifyEmail />} />
-                  <Route path="/profile/:userId" element={<PublicProfilePage />} />
-                  <Route path="/properties/:id" element={<PropertyDetailPage />} />
-                  
-                  {/* ✅ NEW: Location Search Route (Properties + Users in Tabs) */}
-                  <Route path="/search" element={<LocationSearchPage />} />
-                  
-                  {/* ✅ NEW: All Properties Route (View All without filters) */}
-                  <Route path="/properties/all" element={<AllPropertiesPage />} />
-                  
-                  {/* Properties Search Route (Advanced search with filters) */}
-                  <Route path="/properties/search" element={<PropertiesSearchPage />} />
-                  
-                  {/* Protected Routes */}
-                  <Route 
-                    path="/chat" 
-                    element={
-                      <ProtectedRoute>
-                        <ChatPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/chat/:conversationId" 
-                    element={
-                      <ProtectedRoute>
-                        <ChatPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/profile" 
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/create-listing" 
-                    element={
-                      <ProtectedRoute>
-                        <CreatePropertyPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/my-listings" 
-                    element={
-                      <ProtectedRoute>
-                        <MyListingsPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/premium" 
-                    element={
-                      <ProtectedRoute>
-                        <PremiumPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  {/* Admin Routes */}
-                  <Route 
-                    path="/admin" 
-                    element={
-                      <AdminRoute>
-                        <AdminDashboard />
-                      </AdminRoute>
-                    } 
-                  />
-                </Routes>
-              </main>
+              <MainContent />
               <Footer />
               <FloatingChatButton />
             </div>
