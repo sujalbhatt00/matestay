@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import sendEmail from "../utils/sendEmail.js";
+import { sendVerificationEmail } from "../services/emailSendgrid.js";
 
 // Register a New User
 export const register = async (req, res) => {
@@ -50,14 +50,10 @@ export const register = async (req, res) => {
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
     // Send email asynchronously (don't await)
-    sendEmail(
-      email,
-      "Verify Your Email - Matestay",
-      `Hello ${name},\n\nThank you for registering with Matestay!\n\nPlease verify your email by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create this account, please ignore this email.\n\nBest regards,\nThe Matestay Team`
-    )
-      .then(() => console.log("✅ Verification email sent to:", email))
+    sendVerificationEmail(email, name, verificationUrl)
+      .then(() => console.log("✅ Verification email sent via SendGrid to:", email))
       .catch(async (emailError) => {
-        console.error("❌ Email sending failed:", emailError);
+        console.error("❌ SendGrid error:", emailError);
         // ✅ ROLLBACK: Delete user if email fails
         await User.findByIdAndDelete(savedUser._id);
         console.log("🔄 User deleted due to email failure");
@@ -220,13 +216,9 @@ export const resendVerification = async (req, res) => {
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
     // Send email asynchronously (don't await)
-    sendEmail(
-      email,
-      "Verify Your Email - Matestay",
-      `Hello ${user.name},\n\nPlease verify your email by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nBest regards,\nThe Matestay Team`
-    )
-      .then(() => console.log("✅ Verification email resent to:", email))
-      .catch((error) => console.error("❌ Resend verification error:", error));
+    sendVerificationEmail(email, user.name, verificationUrl)
+      .then(() => console.log("✅ Verification email resent via SendGrid to:", email))
+      .catch((error) => console.error("❌ Resend verification error (SendGrid):", error));
 
     res.status(200).json({ 
       message: "Verification email resent successfully. Please check your inbox." 
