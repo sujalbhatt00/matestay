@@ -49,27 +49,26 @@ export const register = async (req, res) => {
 
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
-    try {
-      await sendEmail(
-        email,
-        "Verify Your Email - Matestay",
-        `Hello ${name},\n\nThank you for registering with Matestay!\n\nPlease verify your email by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create this account, please ignore this email.\n\nBest regards,\nThe Matestay Team`
-      );
-      
-      console.log("✅ Verification email sent to:", email);
-      res.status(201).json({ 
-        message: "Registration successful! Please check your email to verify your account.",
-        email: email
+    // Send email asynchronously (don't await)
+    sendEmail(
+      email,
+      "Verify Your Email - Matestay",
+      `Hello ${name},\n\nThank you for registering with Matestay!\n\nPlease verify your email by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create this account, please ignore this email.\n\nBest regards,\nThe Matestay Team`
+    )
+      .then(() => console.log("✅ Verification email sent to:", email))
+      .catch(async (emailError) => {
+        console.error("❌ Email sending failed:", emailError);
+        // ✅ ROLLBACK: Delete user if email fails
+        await User.findByIdAndDelete(savedUser._id);
+        console.log("🔄 User deleted due to email failure");
       });
-    } catch (emailError) {
-      console.error("❌ Email sending failed:", emailError);
-      // ✅ ROLLBACK: Delete user if email fails
-      await User.findByIdAndDelete(savedUser._id);
-      console.log("🔄 User deleted due to email failure");
-      return res.status(500).json({ 
-        message: "Registration failed. Could not send verification email. Please try again." 
-      });
-    }
+
+    // Respond to the user immediately
+    res.status(201).json({ 
+      message: "Registration successful! Please check your email to verify your account.",
+      email: email
+    });
+
   } catch (error) {
     console.error("❌ Registration error:", error);
     res.status(500).json({ message: "Server error during registration" });
@@ -220,13 +219,15 @@ export const resendVerification = async (req, res) => {
 
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
-    await sendEmail(
+    // Send email asynchronously (don't await)
+    sendEmail(
       email,
       "Verify Your Email - Matestay",
       `Hello ${user.name},\n\nPlease verify your email by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nBest regards,\nThe Matestay Team`
-    );
+    )
+      .then(() => console.log("✅ Verification email resent to:", email))
+      .catch((error) => console.error("❌ Resend verification error:", error));
 
-    console.log("✅ Verification email resent to:", email);
     res.status(200).json({ 
       message: "Verification email resent successfully. Please check your inbox." 
     });
