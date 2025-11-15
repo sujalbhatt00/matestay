@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+// import { Progress } from "@/components/ui/progress"; // Uncomment if you have a Progress component
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -40,24 +41,12 @@ const ChatBox = ({ currentChat, hasConversations }) => {
   const isLimitReached = !user?.isPremium && userMessageCount >= MESSAGE_LIMIT;
   const isOnline = onlineUsers?.some(u => u.userId === otherMember?._id);
 
+  // Only scroll to bottom on initial load, not on every message send
   useEffect(() => {
-    if (currentChat) {
-      const fetchMessages = async () => {
-        setIsLoadingMessages(true);
-        try {
-          const res = await axios.get(`/messages/${currentChat._id}`);
-          setMessages(res.data.messages || []);
-          setUserMessageCount(res.data.userMessageCount || 0);
-        } catch (error) {
-          console.error('Failed to fetch messages:', error);
-          toast.error('Could not load messages');
-        } finally {
-          setIsLoadingMessages(false);
-        }
-      };
-      fetchMessages();
-    }
-  }, [currentChat?._id]);
+    if (isLoadingMessages) return;
+    scrollRef.current?.scrollIntoView({ behavior: 'auto' });
+    // eslint-disable-next-line
+  }, [isLoadingMessages]);
 
   useEffect(() => {
     if (!socket) return;
@@ -89,10 +78,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       socket.off("receiveMessage", handleGetMessage);
     };
   }, [socket, currentChat, setConversations]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -233,7 +218,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
 
   if (!currentChat) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-background p-8 text-center">
+      <div className="flex flex-col items-center justify-center h-full bg-background p-8 text-center min-h-[calc(100vh-80px)]">
         <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mb-6">
           <MessageSquare className="h-10 w-10 text-primary" />
         </div>
@@ -260,10 +245,9 @@ const ChatBox = ({ currentChat, hasConversations }) => {
     );
   }
 
-  // --- WhatsApp-like UI update below ---
-
+  // UI Improvements: Add padding-top to avoid navbar overlap, show message limit progress
   return (
-    <div className="flex flex-col h-full w-full bg-background">
+    <div className="flex flex-col h-full w-full bg-background pt-20 md:pt-24">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm">
         <Button
@@ -324,6 +308,24 @@ const ChatBox = ({ currentChat, hasConversations }) => {
           </div>
         )}
       </div>
+
+      {/* Message Limit Progress Bar for Free Users */}
+      {!user?.isPremium && (
+        <div className="px-4 pt-2 pb-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs text-muted-foreground">Free messages left:</span>
+            <span className={`text-xs font-semibold ${remainingMessages <= 3 ? 'text-red-500' : 'text-primary'}`}>
+              {remainingMessages} / {MESSAGE_LIMIT}
+            </span>
+          </div>
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className={`h-2 rounded-full transition-all duration-300 ${remainingMessages <= 3 ? 'bg-red-500' : 'bg-primary'}`}
+              style={{ width: `${(remainingMessages / MESSAGE_LIMIT) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Alerts for message limit */}
       {!user?.isPremium && remainingMessages <= 3 && remainingMessages > 0 && (
