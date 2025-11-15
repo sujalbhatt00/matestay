@@ -8,7 +8,7 @@ import ChatMessage from './ChatMessage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2, MessageSquare, ArrowLeft, Crown, AlertCircle, Check, Sparkles } from 'lucide-react';
+import { Send, Loader2, MessageSquare, ArrowLeft, Crown, AlertCircle, Check, Sparkles, User } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
@@ -300,6 +300,18 @@ const ChatBox = ({ currentChat, hasConversations }) => {
               )}
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-2"
+            onClick={e => {
+              e.stopPropagation();
+              navigate(`/profile/${otherMember._id}`);
+            }}
+            title="View Profile"
+          >
+            <User className="h-5 w-5 text-primary" />
+          </Button>
         </div>
         {!user?.isPremium && (
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted ml-auto">

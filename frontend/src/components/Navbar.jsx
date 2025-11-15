@@ -23,12 +23,18 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { user, logout } = useContext(AuthContext);
-  const { unreadCount } = useChat(); // Only use unreadCount for notification badge
+  const { unreadCount } = useChat();
   const navigate = useNavigate();
 
   const displayUnreadCount = unreadCount || 0;
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
+
+  // Helper for navigation that also closes mobile menu
+  const handleNavClick = (path) => {
+    navigate(path);
+    setIsMenuOpen(false);
+  };
 
   const getNavLinkClass = ({ isActive }) =>
     `flex items-center gap-1 text-sm font-medium transition-colors relative ${
@@ -142,7 +148,7 @@ const Navbar = () => {
       {/* Mobile Top Bar */}
       <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="flex items-center justify-between px-4 h-16">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleNavClick("/")}>
             <img src="/Logo.png" width={50} alt="Matestay" />
             <span className="text-lg font-bold">Matestay</span>
           </div>
@@ -158,35 +164,31 @@ const Navbar = () => {
         <div className="flex items-center justify-around h-16 px-2">
 
           {/* Home */}
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                isActive ? "text-primary bg-primary/10" : "text-muted-foreground"
-              }`
-            }
+          <button
+            onClick={() => handleNavClick("/")}
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+              window.location.pathname === "/" ? "text-primary bg-primary/10" : "text-muted-foreground"
+            }`}
           >
             <Home className="h-5 w-5" />
             <span className="text-[11px] font-medium">Home</span>
-          </NavLink>
+          </button>
 
           {/* Roommates */}
-          <NavLink
-            to="/find-roommates"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                isActive ? "text-primary bg-primary/10" : "text-muted-foreground"
-              }`
-            }
+          <button
+            onClick={() => handleNavClick("/find-roommates")}
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+              window.location.pathname === "/find-roommates" ? "text-primary bg-primary/10" : "text-muted-foreground"
+            }`}
           >
             <Users className="h-5 w-5" />
             <span className="text-[11px] font-medium">Roommates</span>
-          </NavLink>
+          </button>
 
           {/* Post Listing */}
           {user ? (
             <button
-              onClick={() => navigate("/create-listing")}
+              onClick={() => handleNavClick("/create-listing")}
               className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-primary -mt-2"
             >
               <div className="bg-primary text-white rounded-full p-2 shadow-lg">
@@ -207,23 +209,20 @@ const Navbar = () => {
           )}
 
           {/* Messages */}
-          <NavLink
-            to="/chat"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors relative ${
-                isActive ? "text-primary bg-primary/10" : "text-muted-foreground"
-              }`
-            }
+          <button
+            onClick={() => handleNavClick("/chat")}
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors relative ${
+              window.location.pathname.startsWith("/chat") ? "text-primary bg-primary/10" : "text-muted-foreground"
+            }`}
           >
             <MessageSquare className="h-5 w-5" />
             <span className="text-[11px] font-medium">Messages</span>
-
             {displayUnreadCount > 0 && (
               <span className="absolute top-1 right-2 h-4 w-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold shadow-md animate-pulse">
                 {displayUnreadCount > 9 ? "9+" : displayUnreadCount}
               </span>
             )}
-          </NavLink>
+          </button>
 
           {/* Profile */}
           {user ? (
@@ -285,10 +284,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start h-12 text-base"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate("/profile");
-                  }}
+                  onClick={() => handleNavClick("/profile")}
                 >
                   <UserIcon className="h-5 w-5 mr-3" /> My Profile
                 </Button>
@@ -296,10 +292,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start h-12 text-base"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate("/my-listings");
-                  }}
+                  onClick={() => handleNavClick("/my-listings")}
                 >
                   <LayoutDashboard className="h-5 w-5 mr-3" /> My Listings
                 </Button>
@@ -308,10 +301,7 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start h-12 text-base text-yellow-600 hover:text-yellow-600 hover:bg-yellow-500/10"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      navigate("/premium");
-                    }}
+                    onClick={() => handleNavClick("/premium")}
                   >
                     <Crown className="h-5 w-5 mr-3" /> Upgrade to Premium
                   </Button>
@@ -321,10 +311,7 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start h-12 text-base"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      navigate("/admin");
-                    }}
+                    onClick={() => handleNavClick("/admin")}
                   >
                     <ShieldCheck className="h-5 w-5 mr-3" /> Admin Panel
                   </Button>

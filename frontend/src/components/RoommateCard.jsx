@@ -35,8 +35,13 @@ const RoommateCard = ({ roommate }) => {
       const res = await axios.post('/conversations', {
         receiverId: roommate._id,
       });
-      
-      navigate(`/chat/${res.data._id}`);
+
+      // Defensive: fallback if no id
+      if (res.data && res.data._id) {
+        navigate(`/chat/${res.data._id}`);
+      } else {
+        toast.error("Could not start chat. Please try again later.");
+      }
     } catch (err) {
       console.error("Failed to start chat:", err);
       toast.error("Could not start chat. Please try again later.");
@@ -50,7 +55,7 @@ const RoommateCard = ({ roommate }) => {
   }
 
   return (
-    <Card 
+    <Card
       className="w-full max-w-sm overflow-hidden transition-transform transform hover:-translate-y-1 cursor-pointer"
       onClick={() => navigate(`/profile/${roommate._id}`)}
     >
@@ -59,7 +64,7 @@ const RoommateCard = ({ roommate }) => {
           <AvatarImage src={roommate.profilePic || defaultAvatar} alt={roommate.name} />
           <AvatarFallback>{roommate.name ? roommate.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
         </Avatar>
-        
+
         {/* Display name and "You" badge */}
         <div className="flex justify-center items-center gap-2 mb-1">
           <h3 className="text-lg font-semibold text-foreground">{roommate.name}</h3>
@@ -67,17 +72,15 @@ const RoommateCard = ({ roommate }) => {
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">{roommate.occupation || 'Student'}</p>
-        
+
         <div className="flex justify-center space-x-2">
-          {/* Conditional button rendering based on whether it's the user's own profile */}
           {isOwnProfile ? (
-            // Show "View Your Profile" button if it's the logged-in user
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                navigate(`/profile`); 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={e => {
+                e.stopPropagation();
+                navigate(`/profile`);
               }}
               className="w-full"
             >
@@ -85,25 +88,24 @@ const RoommateCard = ({ roommate }) => {
               View Your Profile
             </Button>
           ) : (
-            // Show both "View Profile" and "Message" buttons for other users
             <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  navigate(`/profile/${roommate._id}`); 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={e => {
+                  e.stopPropagation();
+                  navigate(`/profile/${roommate._id}`);
                 }}
               >
                 <User className="mr-2 h-4 w-4" />
                 View Profile
               </Button>
-              <Button 
-                size="sm" 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
+              <Button
+                size="sm"
+                onClick={e => {
+                  e.stopPropagation();
                   handleStartChat();
-                }} 
+                }}
                 disabled={isStartingChat}
               >
                 {isStartingChat ? (
