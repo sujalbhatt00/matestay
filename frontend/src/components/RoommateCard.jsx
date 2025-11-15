@@ -102,7 +102,7 @@ const RoommateCard = ({ roommate }) => {
                 size="sm" 
                 onClick={(e) => { 
                   e.stopPropagation(); 
-                  handleStartChat(); 
+                  handleStartChat();
                 }} 
                 disabled={isStartingChat}
               >
