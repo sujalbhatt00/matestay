@@ -23,6 +23,7 @@ import PremiumPage from "./pages/PremiumPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import FloatingChatButton from "./components/FloatingChatButton";
+import EditPropertyPage from "./pages/EditPropertyPage"; // <-- Add this import
 
 // Helper to force remount on route change
 function MainContent() {
@@ -77,6 +78,14 @@ function MainContent() {
           element={
             <ProtectedRoute>
               <MyListingsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/properties/edit/:id" 
+          element={
+            <ProtectedRoute>
+              <EditPropertyPage />
             </ProtectedRoute>
           } 
         />

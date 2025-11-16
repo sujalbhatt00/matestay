@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import Footer from '@/components/Footer';
-import { Loader2, MapPin, Bath, BedDouble, CalendarDays, Wifi, Utensils, ParkingCircle, Snowflake, ChevronLeft, MessageSquare } from 'lucide-react';
+import { Loader2, MapPin, Bath, BedDouble, CalendarDays, Wifi, Utensils, ParkingCircle, Snowflake, ChevronLeft, MessageSquare, Edit, Trash2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from "sonner";
 
 const placeholderImage = "https://via.placeholder.com/800x600.png?text=No+Image";
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
@@ -40,6 +41,7 @@ const PropertyDetailPage = () => {
   const [property, setProperty] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -68,10 +70,6 @@ const PropertyDetailPage = () => {
     else setIsLoading(false);
   }, [id]);
 
-  // Ensure chat context refreshes conversations after navigation
-  // (Assuming you have a refreshConversations method in your ChatContext)
-  // You can call it after navigation if needed.
-
   const handleContactLister = async () => {
     if (!user) {
       alert("Please log in to contact the lister.");
@@ -89,10 +87,27 @@ const PropertyDetailPage = () => {
       const res = await axios.post("/conversations", {
         receiverId: property.lister._id,
       });
-      // Optionally refresh conversations here if needed
       navigate(`/chat/${res.data._id}`);
     } catch (err) {
       alert("Could not start chat. Please try again later.");
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/properties/edit/${id}`);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this listing? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`/properties/${id}`);
+      toast.success("Listing deleted successfully.");
+      navigate("/my-listings");
+    } catch (err) {
+      toast.error("Failed to delete listing.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -104,6 +119,8 @@ const PropertyDetailPage = () => {
     amenities = [], photos = [], availableFrom, lister
   } = property;
   const displayPhotos = photos.length > 0 ? photos : [placeholderImage];
+
+  const isOwner = user && lister && user._id === lister._id;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -180,6 +197,32 @@ const PropertyDetailPage = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Edit/Delete Buttons for Owner */}
+              {isOwner && (
+                <div className="flex gap-3 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" /> Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex items-center gap-2"
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Delete
+                  </Button>
                 </div>
               )}
             </div>
