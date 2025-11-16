@@ -41,13 +41,10 @@ const LocationSearchPage = () => {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      // FIXED: correct backend route
-      const response = await axios.get(
-        `/user/search?location=${encodeURIComponent(location)}&limit=100`
-      );
+      // Use public search for guests and all users
+      const response = await axios.get(`/user/search-public?location=${encodeURIComponent(location)}`);
       setUsers(response.data);
     } catch (error) {
-      console.error("Failed to fetch users:", error);
       setUsers([]);
     } finally {
       setLoadingUsers(false);
