@@ -1,71 +1,94 @@
-import React, { useState, useRef } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import axios from '@/api/axiosInstance';
+import React, { useState, useRef } from "react";
+import { useAuth } from "@/context/AuthContext";
+import axios from "@/api/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Loader2, User, Phone, MapPin, Briefcase, DollarSign } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Camera,
+  Loader2,
+  User,
+  Phone,
+  MapPin,
+  Briefcase,
+  DollarSign,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
-const lifestyleOptions = ["Early Bird", "Night Owl", "Quiet", "Social", "Vegetarian", "Non-Vegetarian", "Non-Smoker", "Smoker", "Pet-Friendly"];
-const genderOptions = ["Male", "Female", "Non-binary", "Transgender", "Prefer not to say", "Other"];
-const lookingForOptions = ["Any", "Male", "Female", "Non-binary", "Transgender", "Other"];
+const lifestyleOptions = [
+  "Early Bird",
+  "Night Owl",
+  "Quiet",
+  "Social",
+  "Vegetarian",
+  "Non-Vegetarian",
+  "Non-Smoker",
+  "Smoker",
+  "Pet-Friendly",
+];
+const genderOptions = [
+  "Male",
+  "Female",
+  "Non-binary",
+  "Transgender",
+  "Prefer not to say",
+  "Other",
+];
+const lookingForOptions = [
+  "Any",
+  "Male",
+  "Female",
+  "Non-binary",
+  "Transgender",
+  "Other",
+];
 
 export default function MultiStepProfile({ initialData, onSaved }) {
-  const { refreshUser } = useAuth(); // Add refreshUser
+  const { refreshUser } = useAuth();
+
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    name: initialData.name || '',
-    phone: initialData.phone || '',
-    age: initialData.age || '',
-    gender: initialData.gender || '',
-    lookingFor: initialData.lookingFor || 'Any',
-    location: initialData.location || '',
-    occupation: initialData.occupation || '',
-    budget: initialData.budget || '',
-    bio: initialData.bio || '',
-    lifestyle: initialData.lifestyle || [],
-    profilePic: initialData.profilePic || '',
-  });
-  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previousPhotoUrl, setPreviousPhotoUrl] = useState(initialData.profilePic || '');
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const [formData, setFormData] = useState({
+    name: initialData.name || "",
+    phone: initialData.phone || "",
+    age: initialData.age || "",
+    gender: initialData.gender || "",
+    lookingFor: initialData.lookingFor || "Any",
+    location: initialData.location || "",
+    occupation: initialData.occupation || "",
+    budget: initialData.budget || "",
+    bio: initialData.bio || "",
+    lifestyle: initialData.lifestyle || [],
+    profilePic: initialData.profilePic || "",
+  });
 
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const [previousPhotoUrl, setPreviousPhotoUrl] = useState(
+    initialData.profilePic || ""
+  );
 
-  const handleLifestyleToggle = (tag) => {
-    setFormData(prev => ({
-      ...prev,
-      lifestyle: prev.lifestyle.includes(tag)
-        ? prev.lifestyle.filter(t => t !== tag)
-        : [...prev.lifestyle, tag]
-    }));
-  };
-
-  const handlePhotoUpload = async (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error("Please upload an image file");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Upload a valid image");
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size should be less than 5MB");
+      toast.error("Image must be less than 5MB");
       return;
     }
 
@@ -74,256 +97,270 @@ export default function MultiStepProfile({ initialData, onSaved }) {
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      
-      reader.onloadend = async () => {
-        const base64String = reader.result;
 
+      reader.onloadend = async () => {
         const uploadData = new FormData();
-        uploadData.append('file', base64String);
-        uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-        uploadData.append('folder', 'matestay/profiles');
+        uploadData.append("file", reader.result);
+        uploadData.append(
+          "upload_preset",
+          import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+        );
+        uploadData.append("folder", "matestay/profiles");
 
         const cloudinaryResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: 'POST',
-            body: uploadData,
-          }
+          `https://api.cloudinary.com/v1_1/${
+            import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+          }/image/upload`,
+          { method: "POST", body: uploadData }
         );
 
-        if (!cloudinaryResponse.ok) {
-          throw new Error('Failed to upload to Cloudinary');
-        }
+        const data = await cloudinaryResponse.json();
+        const newPhotoUrl = data.secure_url;
 
-        const cloudinaryData = await cloudinaryResponse.json();
-        const newPhotoUrl = cloudinaryData.secure_url;
+        setFormData((prev) => ({ ...prev, profilePic: newPhotoUrl }));
 
-        console.log("✅ Photo uploaded to Cloudinary:", newPhotoUrl);
-
-        // ✅ FIX: Update formData immediately
-        setFormData(prev => ({ ...prev, profilePic: newPhotoUrl }));
-        
-        // Delete old photo from Cloudinary if it exists
-        if (previousPhotoUrl && previousPhotoUrl.includes('cloudinary')) {
-          try {
-            const urlParts = previousPhotoUrl.split('/');
-            const publicIdWithExtension = urlParts[urlParts.length - 1];
-            const publicId = publicIdWithExtension.split('.')[0];
-            
-            await axios.post('/user/delete-cloudinary-image', { publicId });
-            console.log("🗑️ Old photo deleted from Cloudinary");
-          } catch (error) {
-            console.error("Failed to delete old photo:", error);
-          }
+        if (previousPhotoUrl?.includes("cloudinary")) {
+          const publicId = previousPhotoUrl.split("/").pop().split(".")[0];
+          await axios.post("/user/delete-cloudinary-image", { publicId });
         }
 
         setPreviousPhotoUrl(newPhotoUrl);
-        toast.success("Profile photo uploaded successfully!");
+        toast.success("Profile picture updated!");
       };
-
-      reader.onerror = () => {
-        throw new Error('Failed to read file');
-      };
-
-    } catch (error) {
-      console.error("Photo upload error:", error);
-      toast.error("Failed to upload photo. Please try again.");
+    } catch (err) {
+      toast.error("Upload failed");
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleSubmit = async () => {
-    // Validation
-    if (!formData.name.trim()) {
-      toast.error("Name is required");
-      return;
-    }
-    if (!formData.gender) {
-      toast.error("Please select your gender");
-      return;
-    }
-    if (!formData.age || formData.age < 18) {
-      toast.error("Age must be 18 or older");
-      return;
-    }
-    if (!formData.location) {
-      toast.error("Location is required");
-      return;
-    }
+    if (!formData.name.trim()) return toast.error("Name is required");
+    if (!formData.gender) return toast.error("Please select gender");
+    if (!formData.age || formData.age < 18)
+      return toast.error("Age must be 18+");
+    if (!formData.location.trim())
+      return toast.error("Location is required");
 
     setIsSubmitting(true);
-
     try {
-      console.log("📤 Submitting profile data:", formData);
-      
-      const response = await axios.put('/user/update', formData);
-      
-      console.log("✅ Profile updated:", response.data);
-      toast.success("Profile saved successfully!");
-      
-      // ✅ FIX: Refresh user data in AuthContext
+      await axios.put("/user/update", formData);
       await refreshUser();
-      
-      if (onSaved) {
-        onSaved();
-      }
-    } catch (error) {
-      console.error("❌ Profile update error:", error);
-      const errorMsg = error.response?.data?.message || "Failed to save profile";
-      toast.error(errorMsg);
+      toast.success("Profile updated successfully!");
+
+      onSaved?.();
+    } catch (e) {
+      toast.error("Failed to save profile");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const nextStep = () => setStep(s => Math.min(s + 1, 3));
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const nextStep = () => setStep((s) => Math.min(s + 1, 3));
+  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
-    <div className="max-w-2xl mx-auto bg-card p-6 md:p-8 rounded-lg border shadow-lg">
-      {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex justify-between mb-2">
-          <span className={`text-sm font-medium ${step >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>Step 1</span>
-          <span className={`text-sm font-medium ${step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>Step 2</span>
-          <span className={`text-sm font-medium ${step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>Step 3</span>
+    <div className="max-w-2xl mx-auto bg-card p-8 rounded-xl border shadow-xl space-y-8">
+
+      {/* PROGRESS INDICATOR */}
+      <div>
+        <div className="flex justify-between text-xs font-medium mb-2">
+          {[1, 2, 3].map((s) => (
+            <span
+              key={s}
+              className={`transition ${
+                step >= s ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Step {s}
+            </span>
+          ))}
         </div>
-        <div className="w-full bg-muted rounded-full h-2">
-          <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }}></div>
+
+        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all duration-500"
+            style={{ width: `${(step / 3) * 100}%` }}
+          ></div>
         </div>
       </div>
 
-      {/* Step 1: Basic Info */}
+      {/* STEP 1 */}
       {step === 1 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold mb-6">Basic Information</h2>
+        <div className="animate-fadeIn space-y-6">
 
-          {/* Profile Picture */}
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative mb-4">
+          <h2 className="text-2xl font-bold">Basic Information</h2>
+
+          <div className="flex flex-col items-center">
+            <div className="relative">
               <img
                 src={formData.profilePic || "https://i.imgur.com/6VBx3io.png"}
-                alt="Profile"
-                className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+                className="w-32 h-32 rounded-full object-cover border-4 border-primary/20 shadow-lg"
               />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full hover:bg-primary/90 disabled:opacity-50"
+                className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg"
               >
-                {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                {isUploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Camera className="h-5 w-5" />
+                )}
               </button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
                 className="hidden"
+                accept="image/*"
+                onChange={handleFileUpload}
               />
             </div>
-            <p className="text-sm text-muted-foreground">Click the camera icon to upload a photo</p>
+
+            <p className="text-xs text-muted-foreground mt-2">
+              Upload a photo that clearly shows your face.
+            </p>
           </div>
 
           <div>
-            <Label htmlFor="name"><User className="inline h-4 w-4 mr-1" /> Full Name *</Label>
-            <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+            <Label>Full Name *</Label>
+            <Input name="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
           </div>
 
           <div>
-            <Label htmlFor="phone"><Phone className="inline h-4 w-4 mr-1" /> Phone Number (Optional)</Label>
-            <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+91 XXXXX XXXXX" />
+            <Label>Phone (optional)</Label>
+            <Input name="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="gender">Gender *</Label>
-              <Select value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
-                <SelectTrigger id="gender">
+              <Label>Gender *</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(v) =>
+                  setFormData((prev) => ({ ...prev, gender: v }))
+                }
+              >
+                <SelectTrigger>
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  {genderOptions.map(option => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  {genderOptions.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="age">Age *</Label>
-              <Input id="age" name="age" type="number" min="18" value={formData.age} onChange={handleChange} required />
+              <Label>Age *</Label>
+              <Input
+                type="number"
+                min="18"
+                value={formData.age}
+                onChange={(e) =>
+                  setFormData({ ...formData, age: e.target.value })
+                }
+              />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="lookingFor">Looking For</Label>
-            <Select value={formData.lookingFor} onValueChange={(value) => handleSelectChange('lookingFor', value)}>
-              <SelectTrigger id="lookingFor">
-                <SelectValue placeholder="Any" />
-              </SelectTrigger>
-              <SelectContent>
-                {lookingForOptions.map(option => (
-                  <SelectItem key={option} value={option}>{option}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end">
-            <Button onClick={nextStep}>Next</Button>
-          </div>
+          <Button className="w-full" onClick={nextStep}>
+            Continue
+          </Button>
         </div>
       )}
 
-      {/* Step 2: Location & Occupation */}
+      {/* STEP 2 */}
       {step === 2 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold mb-6">Location & Work</h2>
+        <div className="animate-fadeIn space-y-6">
+
+          <h2 className="text-2xl font-bold">Location & Work</h2>
 
           <div>
-            <Label htmlFor="location"><MapPin className="inline h-4 w-4 mr-1" /> Location *</Label>
-            <Input id="location" name="location" value={formData.location} onChange={handleChange} placeholder="City, State" required />
+            <Label>Location *</Label>
+            <Input
+              value={formData.location}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
+            />
           </div>
 
           <div>
-            <Label htmlFor="occupation"><Briefcase className="inline h-4 w-4 mr-1" /> Occupation</Label>
-            <Input id="occupation" name="occupation" value={formData.occupation} onChange={handleChange} placeholder="Student, Working Professional, etc." />
+            <Label>Occupation</Label>
+            <Input
+              value={formData.occupation}
+              onChange={(e) =>
+                setFormData({ ...formData, occupation: e.target.value })
+              }
+            />
           </div>
 
           <div>
-            <Label htmlFor="budget"><DollarSign className="inline h-4 w-4 mr-1" /> Monthly Budget (₹)</Label>
-            <Input id="budget" name="budget" type="number" min="0" value={formData.budget} onChange={handleChange} placeholder="10000" />
+            <Label>Monthly Budget (₹)</Label>
+            <Input
+              type="number"
+              min="0"
+              value={formData.budget}
+              onChange={(e) =>
+                setFormData({ ...formData, budget: e.target.value })
+              }
+            />
           </div>
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={prevStep}>Back</Button>
-            <Button onClick={nextStep}>Next</Button>
+            <Button variant="outline" onClick={prevStep}>
+              Back
+            </Button>
+            <Button onClick={nextStep}>Continue</Button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Bio & Lifestyle */}
+      {/* STEP 3 */}
       {step === 3 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold mb-6">About You</h2>
+        <div className="animate-fadeIn space-y-6">
+
+          <h2 className="text-2xl font-bold">About You</h2>
 
           <div>
-            <Label htmlFor="bio">Bio (Optional)</Label>
-            <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell us about yourself..." maxLength={200} rows={4} />
-            <p className="text-xs text-muted-foreground mt-1">{200 - (formData.bio?.length || 0)} characters remaining</p>
+            <Label>Bio</Label>
+            <Textarea
+              rows={4}
+              maxLength={200}
+              value={formData.bio}
+              onChange={(e) =>
+                setFormData({ ...formData, bio: e.target.value })
+              }
+              placeholder="Tell something interesting about yourself…"
+            />
+            <p className="text-xs text-muted-foreground">
+              {200 - (formData.bio.length || 0)} characters left
+            </p>
           </div>
 
           <div>
-            <Label>Lifestyle Tags</Label>
+            <Label>Lifestyle</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {lifestyleOptions.map(tag => (
+              {lifestyleOptions.map((tag) => (
                 <Badge
                   key={tag}
-                  variant={formData.lifestyle.includes(tag) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => handleLifestyleToggle(tag)}
+                  variant={
+                    formData.lifestyle.includes(tag) ? "default" : "outline"
+                  }
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      lifestyle: prev.lifestyle.includes(tag)
+                        ? prev.lifestyle.filter((t) => t !== tag)
+                        : [...prev.lifestyle, tag],
+                    }))
+                  }
+                  className="cursor-pointer transition"
                 >
                   {tag}
                 </Badge>
@@ -332,12 +369,14 @@ export default function MultiStepProfile({ initialData, onSaved }) {
           </div>
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={prevStep}>Back</Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+            <Button variant="outline" onClick={prevStep}>
+              Back
+            </Button>
+            <Button disabled={isSubmitting} onClick={handleSubmit}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  Saving…
                 </>
               ) : (
                 "Save Profile"

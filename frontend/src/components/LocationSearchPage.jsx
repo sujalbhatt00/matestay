@@ -37,18 +37,18 @@ const LocationSearchPage = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      // Use public search for guests
-      const response = await axios.get(`/user/search-public?location=${encodeURIComponent(location)}`);
-      setUsers(response.data);
-    } catch (error) {
-      setUsers([]);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+const fetchUsers = async () => {
+  setLoadingUsers(true);
+  try {
+    // Use public search for guests
+    const response = await axios.get(`/user/search-public?location=${encodeURIComponent(location)}`);
+    setUsers(response.data);
+  } catch (error) {
+    setUsers([]);
+  } finally {
+    setLoadingUsers(false);
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen">

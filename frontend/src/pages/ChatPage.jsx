@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useChat } from "@/context/ChatContext";
 import { useParams, useNavigate } from "react-router-dom";
@@ -27,7 +27,6 @@ const ChatPage = () => {
     if (activeChat) {
       setCurrentChat(activeChat);
 
-      // Run removeNotification only ONCE
       if (!notificationCleared) {
         removeNotification(conversationId);
         setNotificationCleared(true);
@@ -36,7 +35,7 @@ const ChatPage = () => {
     } else {
       navigate("/chat", { replace: true });
     }
-  }, [conversationId, conversations]); // 🚀 remove removeNotification and navigate from deps
+  }, [conversationId, conversations]);
 
   if (authLoading || loadingConversations) {
     return (
@@ -49,13 +48,13 @@ const ChatPage = () => {
   return (
     <div className="flex flex-col bg-background min-h-screen">
 
-      {/* FIX: Navbar height reserved, no overlay */}
-      <div className="pt-16"></div>
+      {/* FIX NAVBAR OVERLAP — perfect spacing for mobile + desktop */}
+      <div className="pt-[95px] md:pt-[120px]"></div>
 
       <div className="flex w-full flex-1">
 
-        {/* Sidebar for Desktop */}
-        <div className="hidden md:flex md:w-1/3 lg:w-1/4 border-r flex-col bg-card">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:flex md:w-1/3 lg:w-1/4 border-r bg-card flex-col">
           <ConvoList
             conversations={conversations}
             onSelectConversation={(c) => navigate(`/chat/${c._id}`)}
@@ -73,7 +72,11 @@ const ChatPage = () => {
         </div>
 
         {/* Chat Window */}
-        <div className={`flex flex-col w-full md:w-2/3 lg:w-3/4 bg-background ${conversationId ? "flex" : "hidden md:flex"}`}>
+        <div
+          className={`flex flex-col w-full md:w-2/3 lg:w-3/4 bg-background ${
+            conversationId ? "flex" : "hidden md:flex"
+          }`}
+        >
           <ChatBox
             key={currentChat?._id || "no-chat"}
             currentChat={currentChat}
