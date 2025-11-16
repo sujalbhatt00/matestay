@@ -118,36 +118,29 @@ export const getPublicUserProfile = async (req, res) => {
 export const searchUsers = async (req, res) => {
   try {
     const { location, maxBudget, gender, limit } = req.query; 
-
-    const query = {
-      profileSetupComplete: true,
-      _id: { $ne: req.user.id } 
-    };
-
-    // ✅ FIX: Make location optional
-    if (location) {
-      query.location = { $regex: location, $options: 'i' };
+    const query = { profileSetupComplete: true };
+    if (req.user) {
+      query._id = { $ne: req.user.id };
     }
-
+    if (location) {
+      query.location = { $regex: location, $options: "i" };
+    }
     if (maxBudget) {
       query.budget = { $lte: Number(maxBudget) };
     }
     if (gender && gender !== 'Any') {
       query.gender = gender;
     }
-    
     let userQuery = User.find(query);
     if (limit) {
       userQuery = userQuery.limit(Number(limit));
     }
-    
     const users = await userQuery.select("-password"); 
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 // --- Get Featured Users for Homepage ---
 export const getFeaturedUsers = async (req, res) => {
   try {
