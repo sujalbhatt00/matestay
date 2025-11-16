@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useChat } from '@/context/ChatContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import { toast } from 'sonner';
 import ChatMessage from './ChatMessage';
@@ -18,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-// import { Progress } from "@/components/ui/progress"; // Uncomment if you have a Progress component
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
@@ -34,6 +33,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const scrollRef = useRef();
   const navigate = useNavigate();
+  const { conversationId } = useParams();
 
   const otherMember = currentChat?.members.find(m => m._id !== user._id);
   const MESSAGE_LIMIT = 10;
@@ -41,13 +41,26 @@ const ChatBox = ({ currentChat, hasConversations }) => {
   const isLimitReached = !user?.isPremium && userMessageCount >= MESSAGE_LIMIT;
   const isOnline = onlineUsers?.some(u => u.userId === otherMember?._id);
 
-  // Only scroll to bottom on initial load, not on every message send
+  // Fetch messages when conversation changes
   useEffect(() => {
-    if (isLoadingMessages) return;
-    scrollRef.current?.scrollIntoView({ behavior: 'auto' });
-    // eslint-disable-next-line
-  }, [isLoadingMessages]);
+    if (currentChat && currentChat._id) {
+      const fetchMessages = async () => {
+        setIsLoadingMessages(true);
+        try {
+          const res = await axios.get(`/messages/${currentChat._id}`);
+          setMessages(res.data.messages || []);
+          setUserMessageCount(res.data.userMessageCount || 0);
+        } catch (error) {
+          toast.error('Could not load messages');
+        } finally {
+          setIsLoadingMessages(false);
+        }
+      };
+      fetchMessages();
+    }
+  }, [currentChat?._id]);
 
+  // Listen for new messages
   useEffect(() => {
     if (!socket) return;
 
@@ -78,6 +91,21 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       socket.off("receiveMessage", handleGetMessage);
     };
   }, [socket, currentChat, setConversations]);
+
+  // Fix: React to URL change and update chat UI
+  useEffect(() => {
+    if (!conversationId) return;
+    setNewMessage("");
+    setMessages([]);
+    setUserMessageCount(0);
+    setIsLoadingMessages(true);
+  }, [conversationId]);
+
+  // Only scroll to bottom on initial load, not on every message send
+  useEffect(() => {
+    if (isLoadingMessages) return;
+    scrollRef.current?.scrollIntoView({ behavior: 'auto' });
+  }, [isLoadingMessages]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,7 +152,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         return prevConvos;
       });
     } catch (error) {
-      console.error('Failed to send message:', error);
       if (error.response?.data?.limitReached) {
         toast.error('Message limit reached. Upgrade to premium for unlimited messaging.');
         setShowLimitDialog(true);
@@ -188,7 +215,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
               }
             }
           } catch (error) {
-            console.error('Payment verification failed:', error);
             toast.error('Payment verification failed. Please contact support.');
           }
         },
@@ -210,7 +236,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
       razorpayInstance.open();
       setProcessingPayment(false);
     } catch (error) {
-      console.error('Payment initiation error:', error);
       toast.error('Failed to initiate payment. Please try again.');
       setProcessingPayment(false);
     }
@@ -245,11 +270,9 @@ const ChatBox = ({ currentChat, hasConversations }) => {
     );
   }
 
-  // UI Improvements: Add padding-top to avoid navbar overlap, show message limit progress
   return (
     <div className="flex flex-col h-full w-full bg-background pt-20 md:pt-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm">
+      <div className="sticky top-0 z-30 bg-card/95 border-b px-4 py-3 flex items-center gap-3 shadow-lg backdrop-blur-md">
         <Button
           variant="ghost"
           size="icon"
@@ -262,14 +285,14 @@ const ChatBox = ({ currentChat, hasConversations }) => {
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate(`/profile/${otherMember._id}`)}
         >
-          <Avatar className="h-11 w-11 ring-2 ring-primary/10">
+          <Avatar className="h-12 w-12 ring-2 ring-primary/10 shadow">
             <AvatarImage src={otherMember?.profilePic || defaultAvatar} alt={otherMember?.name} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {otherMember?.name?.charAt(0).toUpperCase() || "?"}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-foreground truncate hover:underline">
+            <span className="font-semibold text-lg text-foreground truncate hover:underline">
               {otherMember?.name || "Unknown User"}
             </span>
             <span className="text-xs text-muted-foreground truncate">
@@ -309,7 +332,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         )}
       </div>
 
-      {/* Message Limit Progress Bar for Free Users */}
       {!user?.isPremium && (
         <div className="px-4 pt-2 pb-1">
           <div className="flex items-center gap-2 mb-1">
@@ -327,7 +349,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         </div>
       )}
 
-      {/* Alerts for message limit */}
       {!user?.isPremium && remainingMessages <= 3 && remainingMessages > 0 && (
         <Alert className="m-4 border-yellow-500/50 bg-yellow-500/10">
           <AlertCircle className="h-4 w-4 text-yellow-500" />
@@ -361,8 +382,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         </Alert>
       )}
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-2 md:px-4 py-2 md:py-4 space-y-3 custom-scrollbar bg-background">
+      <div className="flex-1 overflow-y-auto px-2 md:px-4 py-4 md:py-6 space-y-3 custom-scrollbar bg-gradient-to-br from-background via-card to-background rounded-b-2xl shadow-inner">
         {isLoadingMessages ? (
           <div className="flex justify-center items-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -389,8 +409,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         )}
       </div>
 
-      {/* Input Area */}
-      <form onSubmit={handleSubmit} className="px-2 md:px-4 py-3 border-t bg-card">
+      <form onSubmit={handleSubmit} className="px-2 md:px-4 py-4 border-t bg-card/95 shadow-lg">
         <div className="flex gap-2 items-center">
           <Input
             type="text"
@@ -398,14 +417,14 @@ const ChatBox = ({ currentChat, hasConversations }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             disabled={isSending || isLimitReached}
-            className="flex-1 bg-background"
+            className="flex-1 bg-background rounded-full px-4 py-2 text-base shadow"
             autoComplete="off"
           />
           <Button
             type="submit"
             size="icon"
             disabled={isSending || !newMessage.trim() || isLimitReached}
-            className="bg-[#5b5dda] hover:bg-[#4a4ab5] flex-shrink-0"
+            className="bg-[#5b5dda] hover:bg-[#4a4ab5] flex-shrink-0 rounded-full h-12 w-12 shadow-lg"
           >
             {isSending ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -416,7 +435,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
         </div>
       </form>
 
-      {/* Premium Upgrade Payment Dialog */}
       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -431,7 +449,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid md:grid-cols-2 gap-4 my-4">
-            {/* Monthly Plan */}
             <div className="border-2 border-primary/20 rounded-xl p-6 hover:border-primary transition-all">
               <div className="text-center mb-4">
                 <h3 className="text-xl font-bold mb-2">Monthly</h3>
@@ -475,7 +492,6 @@ const ChatBox = ({ currentChat, hasConversations }) => {
                 )}
               </Button>
             </div>
-            {/* Yearly Plan */}
             <div className="border-2 border-primary rounded-xl p-6 bg-primary/5 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
