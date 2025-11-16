@@ -8,7 +8,7 @@ import ChatMessage from './ChatMessage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2, MessageSquare, ArrowLeft, Crown, Check, Sparkles, User } from 'lucide-react';
+import { Send, Loader2, MessageSquare, ArrowLeft } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -236,11 +236,25 @@ const ChatBox = ({ currentChat, hasConversations, loading }) => {
           >
             {isSending ? <Loader2 className="animate-spin" /> : <Send />}
           </Button>
-
         </div>
+
+        {/* Show message countdown for non-premium users */}
+        {!user?.isPremium && (
+          <div className="text-xs text-muted-foreground mt-2 text-center">
+            {isLimitReached ? (
+              <span className="text-red-500 font-semibold">
+                Free message limit reached. <a href="/premium" className="underline text-primary">Upgrade to premium</a> to continue messaging.
+              </span>
+            ) : (
+              <span>
+                Free messages left: <span className="font-semibold">{MESSAGE_LIMIT - userMessageCount}</span> / {MESSAGE_LIMIT}
+              </span>
+            )}
+          </div>
+        )}
       </form>
 
-      {/* PREMIUM DIALOG — unchanged */}
+      {/* PREMIUM DIALOG */}
       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>

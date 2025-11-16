@@ -97,32 +97,25 @@ export const getPublicUserProfile = async (req, res) => {
   }
 };
 
-
 export const searchUsers = async (req, res) => {
   try {
-    const { location, maxBudget, gender, budget, limit } = req.query;
+    const { location, maxBudget, gender, budget } = req.query;
     const query = { profileSetupComplete: true };
 
-    // Location filter (case-insensitive)
     if (location) {
       query.location = { $regex: location, $options: "i" };
     }
-    // Budget filter (support both maxBudget and budget param)
     if (maxBudget) {
       query.budget = { $lte: Number(maxBudget) };
     } else if (budget) {
       query.budget = { $lte: Number(budget) };
     }
-    // Gender filter
     if (gender && gender !== 'Any') {
       query.gender = gender;
     }
 
-    let userQuery = User.find(query);
-    if (limit) {
-      userQuery = userQuery.limit(Number(limit));
-    }
-    const users = await userQuery.select("-password");
+    // DO NOT add .limit(1) or any limit unless you want to restrict results
+    const users = await User.find(query).select("-password");
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Server error" });

@@ -16,7 +16,7 @@ export const ChatProvider = ({ children }) => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // ✅ NEW: Fetch unread messages when user logs in
+  // Fetch unread messages when user logs in
   useEffect(() => {
     if (!user) {
       setNotifications([]);
@@ -26,12 +26,7 @@ export const ChatProvider = ({ children }) => {
 
     const fetchUnreadMessages = async () => {
       try {
-        console.log("📥 Fetching unread messages for user:", user._id);
         const response = await axios.get('/messages/unread/by-conversation');
-        
-        console.log("✅ Unread messages fetched:", response.data);
-        
-        // Convert unread messages to notifications format
         const unreadNotifications = response.data.flatMap(item => 
           item.lastUnreadMessage ? [{
             _id: item.lastUnreadMessage._id,
@@ -42,13 +37,11 @@ export const ChatProvider = ({ children }) => {
             count: item.unreadCount,
           }] : []
         );
-
         setNotifications(unreadNotifications);
-        
+
         // Fetch total unread count
         const countResponse = await axios.get('/messages/unread/count');
         setUnreadCount(countResponse.data.unreadCount);
-        
       } catch (error) {
         console.error("Failed to fetch unread messages:", error);
       }
@@ -58,26 +51,24 @@ export const ChatProvider = ({ children }) => {
   }, [user?._id]);
 
   // Fetch conversations
+  const fetchConversations = async () => {
+    setLoadingConversations(true);
+    try {
+      const res = await axios.get('/conversations');
+      setConversations(res.data || []);
+    } catch (error) {
+      setConversations([]);
+    } finally {
+      setLoadingConversations(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       setConversations([]);
       setLoadingConversations(false);
       return;
     }
-
-    const fetchConversations = async () => {
-      setLoadingConversations(true);
-      try {
-        const res = await axios.get('/conversations');
-        setConversations(res.data || []);
-      } catch (error) {
-        console.error("Failed to fetch conversations:", error);
-        setConversations([]);
-      } finally {
-        setLoadingConversations(false);
-      }
-    };
-
     fetchConversations();
   }, [user?._id]);
 
@@ -85,7 +76,6 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     if (!user?._id) {
       if (socket) {
-        console.log("🔌 Disconnecting socket...");
         socket.disconnect();
         setSocket(null);
       }
@@ -93,7 +83,6 @@ export const ChatProvider = ({ children }) => {
       return;
     }
 
-    console.log("🔌 Connecting to socket server...");
     const newSocket = io(import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || "http://localhost:5000", {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -102,37 +91,32 @@ export const ChatProvider = ({ children }) => {
     });
 
     newSocket.on("connect", () => {
-      console.log("✅ Socket connected:", newSocket.id);
       newSocket.emit("addUser", user._id);
     });
 
     newSocket.on("getUsers", (users) => {
-      console.log("👥 Online users updated:", users.length);
       setOnlineUsers(users);
     });
 
     newSocket.on("getMessage", (message) => {
-      console.log("📨 Received message:", message);
       handleIncomingMessage(message);
     });
 
     newSocket.on("receiveMessage", (message) => {
-      console.log("📨 Received message (duplicate event):", message);
       handleIncomingMessage(message);
     });
 
     newSocket.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
+      // Handle disconnect if needed
     });
 
     newSocket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error);
+      // Handle connection error if needed
     });
 
     setSocket(newSocket);
 
     return () => {
-      console.log("🔌 Cleaning up socket connection");
       newSocket.disconnect();
     };
   }, [user?._id]);
@@ -181,6 +165,7 @@ export const ChatProvider = ({ children }) => {
     notifications,
     unreadCount,
     removeNotification,
+    refreshConversations: fetchConversations, // <-- Add this line
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -89,7 +89,7 @@ const Footer = () => {
             © {new Date().getFullYear()} <strong>Matestay</strong> Private Limited
           </p>
           <p className="text-xs mt-1 text-muted-foreground">
-            Designed & Built by <span className="font-semibold text-primary">Sujal Bhatt </span>
+            Designed & Built by <span className="font-semibold text-primary">Sujal Bhatt & team </span>
           </p>
         </div>
 

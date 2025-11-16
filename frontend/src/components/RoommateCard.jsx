@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import { useAuth } from '@/context/AuthContext';
+import { useChat } from '@/context/ChatContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
 const RoommateCard = ({ roommate }) => {
   const { user } = useAuth();
+  const { refreshConversations } = useChat();
   const navigate = useNavigate();
   const [isStartingChat, setIsStartingChat] = useState(false);
 
@@ -36,8 +38,8 @@ const RoommateCard = ({ roommate }) => {
         receiverId: roommate._id,
       });
 
-      // Defensive: fallback if no id
       if (res.data && res.data._id) {
+        await refreshConversations(); // Ensure chat list is up to date
         navigate(`/chat/${res.data._id}`);
       } else {
         toast.error("Could not start chat. Please try again later.");

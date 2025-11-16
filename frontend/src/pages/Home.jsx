@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from '@/api/axiosInstance';
 import Hero from '../components/Hero';
 import ListingsSection from '../components/ListingsSection';
-import RoommateCard from '../components/RoommateCard';
+import RoommateCard from '@/components/RoommateCard';
 import { Loader2 } from 'lucide-react';
 
 const Home = () => {
@@ -28,6 +28,7 @@ const Home = () => {
   return (
     <div className="flex flex-col">
 
+      {/* ⚡ Your SAME Hero Component (only the button updated inside Hero.jsx) */}
       <Hero />
 
       <ListingsSection />
@@ -36,7 +37,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
 
           <h2 className="text-3xl font-bold text-center mb-10">
-            Featured Roommates
+            Featured Users
           </h2>
 
           {loadingRoommates ? (
@@ -44,7 +45,8 @@ const Home = () => {
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
             </div>
           ) : featuredRoommates.length > 0 ? (
-            <div className="grid 
+            <div className="
+              grid 
               grid-cols-1 
               sm:grid-cols-2 
               md:grid-cols-3 
@@ -58,7 +60,7 @@ const Home = () => {
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-10">
-              No featured roommates available right now.
+              No featured Users available right now.
             </p>
           )}
         </div>
