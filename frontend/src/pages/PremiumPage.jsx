@@ -3,15 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "@/api/axiosInstance";
 
-import {
-  Loader2,
-  Check,
-  Crown,
-  Sparkles,
-  ShieldCheck,
-  Star,
-} from "lucide-react";
-
+import { Loader2, Check, Crown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,49 +22,33 @@ const PremiumPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  // ⭐ NEW CHEAP BUT PREMIUM PRICING
+  // ⭐ Plans based on controller
   const plans = [
     {
       id: "monthly",
       name: "Monthly Access",
       price: 29,
       duration: "30 Days",
-      highlightNote: "Perfect for short-term use",
+      highlightNote: "Perfect for trying premium",
       features: [
         "Unlimited chat messages",
         "Advanced roommate filters",
-        "Verified badge on profile",
-        "Priority support",
-        "Ad-free platform",
-      ],
-    },
-    {
-      id: "quarterly",
-      name: "3-Month Access",
-      price: 59,
-      duration: "90 Days",
-      popular: true,
-      savings: "Save ₹28",
-      highlightNote: "Most Value For Money",
-      features: [
-        "Everything in Monthly",
-        "Top position in search",
-        "Boosted visibility",
-        "Higher trust score",
+        "Verified badge",
+        "Ad-free experience",
       ],
     },
     {
       id: "yearly",
-      name: "1-Year Access",
+      name: "Yearly Access",
       price: 149,
       duration: "365 Days",
-      savings: "Save ₹199",
-      highlightNote: "Best For Serious Finding",
+      popular: true,
+      highlightNote: "Best Value • Save ₹199",
       features: [
-        "Everything in Quarterly",
+        "Everything in Monthly",
+        "Priority search ranking",
         "Premium yearly badge",
         "Unlimited boosts",
-        "Dedicated premium support",
       ],
     },
   ];
@@ -103,6 +79,7 @@ const PremiumPage = () => {
         return setLoading(false);
       }
 
+      // ✅ Request matches your controller
       const { data: orderData } = await axios.post("/payments/create-order", {
         plan: plan.id,
       });
@@ -114,26 +91,29 @@ const PremiumPage = () => {
         name: "Matestay Premium",
         description: plan.name,
         order_id: orderData.orderId,
+
         handler: async (response) => {
           try {
+            // Send exactly what verify route needs
             await axios.post("/payments/verify", response);
             toast.success("Welcome to Premium 🎉");
+
             await refreshUser();
             navigate("/profile");
           } catch (err) {
-            toast.error("Verification failed.");
+            toast.error("Payment verification failed.");
           } finally {
             setLoading(false);
             setSelectedPlan(null);
           }
         },
-        theme: {
-          color: "#6c63ff",
-        },
+
         prefill: {
           name: user.name,
           email: user.email,
         },
+
+        theme: { color: "#6c63ff" },
       };
 
       const rzp = new window.Razorpay(options);
@@ -145,7 +125,7 @@ const PremiumPage = () => {
     }
   };
 
-  // ⭐ Already premium — show current plan
+  // ⭐ Already Premium UI
   if (user?.isPremium) {
     const endDate = new Date(user.subscriptionEndDate).toLocaleDateString();
 
@@ -159,7 +139,7 @@ const PremiumPage = () => {
           </CardTitle>
 
           <CardDescription className="text-lg mt-2">
-            Your subscription is active until:
+            Active until:
             <br />
             <span className="font-semibold text-primary text-xl block mt-1">
               {endDate}
@@ -176,28 +156,28 @@ const PremiumPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-20 pt-32">
-      {/* ⭐ HEADER */}
+      {/* HEADER */}
       <div className="text-center mb-14">
         <div className="flex justify-center items-center gap-3">
           <Sparkles className="h-10 w-10 text-primary" />
           <h1 className="text-4xl font-bold">Upgrade to Premium</h1>
         </div>
         <p className="text-muted-foreground text-lg mt-3">
-          Cheap, powerful, and designed to help you find the perfect roommate faster.
+          Cheap, powerful, and built to help you find the best roommate faster.
         </p>
       </div>
 
-      {/* ⭐ MODERN PLANS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+      {/* PLANS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         {plans.map((plan) => (
           <Card
             key={plan.id}
-            className={`relative p-6 rounded-2xl border transition transform hover:-translate-y-1 hover:shadow-2xl 
+            className={`relative p-6 rounded-2xl border transition hover:-translate-y-1 hover:shadow-xl 
               ${plan.popular ? "border-primary shadow-xl scale-[1.03]" : "border-border"}`}
           >
             {plan.popular && (
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-full">
-                ⭐ Most Popular
+                ⭐ Best Value
               </Badge>
             )}
 
@@ -211,13 +191,6 @@ const PremiumPage = () => {
 
               <div className="text-center mt-4">
                 <span className="text-5xl font-bold">₹{plan.price}</span>
-
-                {plan.savings && (
-                  <Badge variant="secondary" className="ml-2">
-                    {plan.savings}
-                  </Badge>
-                )}
-
                 <p className="mt-2 text-sm text-primary">{plan.highlightNote}</p>
               </div>
             </CardHeader>
@@ -226,8 +199,7 @@ const PremiumPage = () => {
               <ul className="space-y-3 mb-6 mt-3">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="flex gap-2 text-sm">
-                    <Check className="h-5 w-5 text-primary" />
-                    {feature}
+                    <Check className="h-5 w-5 text-primary" /> {feature}
                   </li>
                 ))}
               </ul>
