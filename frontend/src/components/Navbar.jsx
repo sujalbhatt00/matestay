@@ -64,9 +64,9 @@ const Navbar = () => {
         z-50 w-[88%]
         bg-background/40 backdrop-blur-xl
         border border-white/10 shadow-xl
-        rounded-xl px-6 py-3
+        rounded-2xl px-6 py-3
       ">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between h-9">
 
           {/* Logo */}
           <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
@@ -111,7 +111,7 @@ const Navbar = () => {
             {user && (
               <Button
                 onClick={() => navigate("/create-listing")}
-                className="bg-primary text-white rounded-full px-4 py-1.5 shadow hover:bg-primary/90"
+                className="bg-primary text-primary-foreground rounded-full px-4 py-1.5 shadow hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4 mr-1" /> Post
               </Button>
@@ -154,7 +154,7 @@ const Navbar = () => {
                   {user.isAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin")}>
                       <ShieldCheck className="h-4 w-4 mr-2" /> Admin Panel
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> // <-- THIS WAS THE TYPO
                   )}
 
                   <DropdownMenuSeparator />
@@ -165,7 +165,7 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button className="bg-primary text-white px-5 rounded-full shadow"
+              <Button className="bg-primary text-primary-foreground px-5 rounded-full shadow"
                 onClick={() => setShowAuth(true)}
               >
                 Sign In

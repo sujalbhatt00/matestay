@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, User } from "lucide-react";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 export default function AuthModal({ onClose }) {
   const { login } = useContext(AuthContext);
@@ -12,6 +13,7 @@ export default function AuthModal({ onClose }) {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -52,11 +54,7 @@ export default function AuthModal({ onClose }) {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     try {
       console.log("Attempting registration...");
@@ -65,7 +63,6 @@ export default function AuthModal({ onClose }) {
         email: form.email,
         password: form.password,
       });
-      
       console.log("Registration response:", data);
       toast.success(data.message || "Registration successful! Check your email.");
       setTab("login");
@@ -81,11 +78,7 @@ export default function AuthModal({ onClose }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     try {
       console.log("Attempting login...");
@@ -93,7 +86,6 @@ export default function AuthModal({ onClose }) {
         email: form.email,
         password: form.password,
       });
-      
       console.log("Login response:", data);
       login(data.user, data.token);
       toast.success("Login successful!");
@@ -101,7 +93,6 @@ export default function AuthModal({ onClose }) {
     } catch (err) {
       console.error("Login error:", err);
       const errorData = err.response?.data;
-      
       if (errorData?.needsVerification) {
         toast.error(
           <div className="flex flex-col gap-2">
@@ -124,9 +115,18 @@ export default function AuthModal({ onClose }) {
     }
   };
 
+  if (showForgotPassword) {
+    return (
+      <ForgotPasswordModal 
+        onClose={onClose} 
+        onShowLogin={() => setShowForgotPassword(false)} 
+      />
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-6 m-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-6 m-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold">{tab === "login" ? "Welcome Back" : "Create Account"}</h3>
           <button 
@@ -262,6 +262,17 @@ export default function AuthModal({ onClose }) {
                 />
               </div>
               {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
+            </div>
+
+            <div className="text-right">
+              <Button 
+                type="button" 
+                variant="link" 
+                className="p-0 h-auto text-sm text-primary"
+                onClick={() => setShowForgotPassword(true)}
+              >
+                Forgot password?
+              </Button>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

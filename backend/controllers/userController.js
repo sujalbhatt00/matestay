@@ -3,6 +3,8 @@ import User from "../models/User.js";
 import Property from "../models/Property.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
+import bcrypt from "bcryptjs";
+import { sendPasswordChangeConfirmationEmail } from "../services/emailSendgrid.js";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -48,7 +50,6 @@ export const updateProfile = async (req, res) => {
           await cloudinary.v2.uploader.destroy(`matestay/profiles/${publicIdMatch[1]}`);
         }
       } catch (cloudinaryError) {
-        // Ignore cloudinary errors
       }
     }
 
@@ -114,7 +115,6 @@ export const searchUsers = async (req, res) => {
       query.gender = gender;
     }
 
-    // DO NOT add .limit(1) or any limit unless you want to restrict results
     const users = await User.find(query).select("-password");
     res.json(users);
   } catch (error) {
@@ -197,12 +197,10 @@ export const deleteAccount = async (req, res) => {
           await cloudinary.v2.uploader.destroy(`matestay/profiles/${publicIdMatch[1]}`);
         }
       } catch (cloudinaryError) {
-        // Ignore cloudinary errors
       }
     }
 
     await Property.deleteMany({ lister: userId });
-
     const userConversations = await Conversation.find({ members: userId });
     const conversationIds = userConversations.map(c => c._id);
 
@@ -210,11 +208,49 @@ export const deleteAccount = async (req, res) => {
       await Message.deleteMany({ conversationId: { $in: conversationIds } });
     }
     await Conversation.deleteMany({ _id: { $in: conversationIds } });
-
     await User.findByIdAndDelete(userId);
 
     res.json({ message: "Account and all associated data deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error while deleting account" });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ message: "Old and new passwords are required." });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: "New password must be at least 6 characters long." });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect old password." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    sendPasswordChangeConfirmationEmail(user.email, user.name)
+      .then(() => console.log("✅ Password change confirmation sent to:", user.email))
+      .catch((error) => console.error("❌ SendGrid error (password change confirm):", error));
+
+    res.status(200).json({ message: "Password changed successfully." });
+
+  } catch (error) {
+    console.error("❌ Change Password error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

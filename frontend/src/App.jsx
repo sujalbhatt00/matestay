@@ -23,15 +23,14 @@ import PremiumPage from "./pages/PremiumPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import FloatingChatButton from "./components/FloatingChatButton";
-import EditPropertyPage from "./pages/EditPropertyPage"; // <-- Add this import
+import EditPropertyPage from "./pages/EditPropertyPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
-// Helper to force remount on route change
 function MainContent() {
   const location = useLocation();
   return (
     <main className="flex-grow" key={location.pathname}>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/find-roommates" element={<FindRoommate />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -40,7 +39,9 @@ function MainContent() {
         <Route path="/search" element={<LocationSearchPage />} />
         <Route path="/properties/all" element={<AllPropertiesPage />} />
         <Route path="/properties/search" element={<PropertiesSearchPage />} />
-        {/* Protected Routes */}
+
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
         <Route 
           path="/chat" 
           element={
@@ -97,7 +98,6 @@ function MainContent() {
             </ProtectedRoute>
           } 
         />
-        {/* Admin Routes */}
         <Route 
           path="/admin" 
           element={

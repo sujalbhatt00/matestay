@@ -2,9 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { sendVerificationEmail } from "../services/emailSendgrid.js";
+import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangeConfirmationEmail } from "../services/emailSendgrid.js";
 
-// Register a New User
 export const register = async (req, res) => {
   try {
     console.log("🔵 Registration attempt:", { email: req.body.email, name: req.body.name });
@@ -33,11 +32,9 @@ export const register = async (req, res) => {
       verificationToken,
     });
 
-    // ✅ CRITICAL: Save to database FIRST before doing anything else
     const savedUser = await newUser.save();
     console.log("✅ User saved to database:", savedUser._id);
 
-    // ✅ Verify the user actually exists in DB
     const verifyUser = await User.findById(savedUser._id);
     if (!verifyUser) {
       console.error("❌ CRITICAL: User not found after save!");
@@ -49,17 +46,14 @@ export const register = async (req, res) => {
 
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
-    // Send email asynchronously (don't await)
     sendVerificationEmail(email, name, verificationUrl)
       .then(() => console.log("✅ Verification email sent via SendGrid to:", email))
       .catch(async (emailError) => {
         console.error("❌ SendGrid error:", emailError);
-        // ✅ ROLLBACK: Delete user if email fails
         await User.findByIdAndDelete(savedUser._id);
         console.log("🔄 User deleted due to email failure");
       });
 
-    // Respond to the user immediately
     res.status(201).json({ 
       message: "Registration successful! Please check your email to verify your account.",
       email: email
@@ -71,7 +65,6 @@ export const register = async (req, res) => {
   }
 };
 
-// Verify Email
 export const verifyEmail = async (req, res) => {
   try {
     console.log("🔵 Email verification attempt with token:", req.query.token);
@@ -99,7 +92,6 @@ export const verifyEmail = async (req, res) => {
     user.verificationToken = undefined;
     await user.save();
 
-    // ✅ Double-check verification was saved
     const verifiedUser = await User.findById(user._id);
     if (!verifiedUser.verified) {
       console.error("❌ CRITICAL: Verification not saved!");
@@ -114,7 +106,6 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// Login User
 export const login = async (req, res) => {
   try {
     console.log("🔵 Login attempt:", req.body.email);
@@ -132,7 +123,6 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // ✅ CHECK: Ensure user actually exists in database
     const dbCheck = await User.findById(user._id);
     if (!dbCheck) {
       console.error("❌ CRITICAL: User exists in query but not in DB!");
@@ -186,7 +176,6 @@ export const login = async (req, res) => {
   }
 };
 
-// Resend Verification Email
 export const resendVerification = async (req, res) => {
   try {
     console.log("🔵 Resend verification request:", req.body.email);
@@ -215,7 +204,6 @@ export const resendVerification = async (req, res) => {
 
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
-    // Send email asynchronously (don't await)
     sendVerificationEmail(email, user.name, verificationUrl)
       .then(() => console.log("✅ Verification email resent via SendGrid to:", email))
       .catch((error) => console.error("❌ Resend verification error (SendGrid):", error));
@@ -226,5 +214,75 @@ export const resendVerification = async (req, res) => {
   } catch (error) {
     console.error("❌ Resend verification error:", error);
     res.status(500).json({ message: "Failed to resend verification email" });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("🔵 Forgot Password: Email not found (but sending 200).");
+      return res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent." });
+    }
+
+    const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
+
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    sendPasswordResetEmail(user.email, user.name, resetLink)
+      .then(() => console.log("✅ Password reset email sent to:", user.email))
+      .catch((error) => console.error("❌ SendGrid error (forgot password):", error));
+    
+    res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent." });
+
+  } catch (error) {
+    console.error("❌ Forgot Password error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ message: "Token and new password are required." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.id) {
+      return res.status(400).json({ message: "Invalid token." });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(400).json({ message: "User not found." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+    user.verificationToken = undefined;
+    await user.save();
+
+    sendPasswordChangeConfirmationEmail(user.email, user.name)
+      .then(() => console.log("✅ Password change confirmation sent to:", user.email))
+      .catch((error) => console.error("❌ SendGrid error (password change confirm):", error));
+
+    res.status(200).json({ message: "Password reset successful. You can now log in." });
+
+  } catch (error) {
+    console.error("❌ Reset Password error:", error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ message: "Password reset link has expired. Please request a new one." });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({ message: "Invalid password reset link." });
+    }
+    res.status(500).json({ message: "Server error" });
   }
 };
