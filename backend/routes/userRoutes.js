@@ -16,6 +16,8 @@ const router = express.Router();
 // --- PUBLIC ROUTES ---
 router.get("/featured", getFeaturedUsers);
 router.get("/public-profile/:userId", getPublicUserProfile);
+router.get("/search-public", searchUsers);
+
 
 // --- PROTECTED ROUTES (require authentication) ---
 router.put("/update", protect, updateProfile);

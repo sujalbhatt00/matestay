@@ -8,7 +8,7 @@ import ChatMessage from './ChatMessage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2, MessageSquare, ArrowLeft, Crown, AlertCircle, Check, Sparkles, Paperclip, Smile, MoreVertical, Eraser, Trash2 } from 'lucide-react';
+import { Send, Loader2, MessageSquare, ArrowLeft, Crown, AlertCircle, Check, Sparkles, Paperclip, Smile, Search, Phone, MoreVertical, Eraser, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
@@ -159,8 +159,84 @@ const ChatBox = ({ currentChat, hasConversations }) => {
     }
   };
 
-  const loadRazorpayScript = () => { /* ... (your existing logic) ... */ };
-  const handleUpgradeClick = async (planType) => { /* ... (your existing logic) ... */ };
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleUpgradeClick = async (planType) => {
+    setProcessingPayment(true);
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast.error('Failed to load payment gateway. Please try again.');
+        setProcessingPayment(false);
+        return;
+      }
+      const { data: orderData } = await axios.post('/payments/create-order', {
+        plan: planType,
+      });
+      if (!orderData.keyId || !orderData.orderId) {
+        toast.error('Payment configuration error. Please try again.');
+        setProcessingPayment(false);
+        return;
+      }
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Matestay Premium',
+        description: `${planType === 'monthly' ? 'Monthly' : 'Yearly'} Premium Subscription`,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await axios.post('/payments/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            if (verifyRes.data.isPremium) {
+              toast.success('🎉 Payment successful! You are now a Premium member!');
+              setShowLimitDialog(false);
+              const { data: userData } = await axios.get('/user/profile');
+              if (userData) {
+                localStorage.setItem('matestay_user', JSON.stringify(userData));
+                window.location.reload(); 
+              }
+            }
+          } catch (error) {
+            console.error('Payment verification failed:', error);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: {
+          color: '#5b5dda',
+        },
+        modal: {
+          ondismiss: function() {
+            setProcessingPayment(false);
+            toast.info('Payment cancelled');
+          }
+        }
+      };
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.open();
+      setProcessingPayment(false);
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+      setProcessingPayment(false);
+    }
+  };
 
   const handleClearChat = async () => {
     setShowClearChatDialog(false);
@@ -346,7 +422,7 @@ const ChatBox = ({ currentChat, hasConversations }) => {
             type="text"
             placeholder={isLimitReached ? "Your free messages for today are over..." : "Type a message..."}
             value={newMessage}
-            // --- THIS IS THE FIX for typing ---
+            // --- THIS IS THE FIX ---
             onChange={(e) => setNewMessage(e.target.value)}
             // --- END FIX ---
             disabled={isSending || isLimitReached}
@@ -369,9 +445,133 @@ const ChatBox = ({ currentChat, hasConversations }) => {
 
       {/* Premium Upgrade Payment Dialog */}
       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
-        {/* ... (Your existing payment dialog JSX) ... */}
-      </Dialog>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-full">
+                <Crown className="h-12 w-12 text-white" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-3xl">Upgrade to Premium</DialogTitle>
+            <DialogDescription className="text-center text-base">
+              You've used all your free messages. Choose a plan to continue chatting!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid md:grid-cols-2 gap-4 my-4">
+            {/* Monthly Plan */}
+            <div className="border-2 border-primary/20 rounded-xl p-6 hover:border-primary transition-all">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold mb-2">Monthly</h3>
+                <div className="text-4xl font-bold text-primary">₹1</div>
+                <p className="text-sm text-muted-foreground">per month</p>
+              </div>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Unlimited messaging</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Featured profile</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Priority support</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Ad-free experience</span>
+                </li>
+              </ul>
+              <Button 
+                onClick={() => handleUpgradeClick('monthly')}
+                disabled={processingPayment}
+                className="w-full"
+                variant="outline"
+              >
+                {processingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Choose Monthly
+                  </>
+                )}
+              </Button>
+            </div>
 
+            {/* Yearly Plan */}
+            <div className="border-2 border-primary rounded-xl p-6 bg-primary/5 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  SAVE ₹2
+                </span>
+              </div>
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold mb-2">Yearly</h3>
+                <div className="text-4xl font-bold text-primary">₹10</div>
+                <p className="text-sm text-muted-foreground">per year</p>
+                <p className="text-xs text-green-600 font-semibold mt-1">Save 17%</p>
+              </div>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Everything in Monthly</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Exclusive yearly badge</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Early access to features</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span>Priority listing placement</span>
+                </li>
+              </ul>
+              <Button 
+                onClick={() => handleUpgradeClick('yearly')}
+                disabled={processingPayment}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+              >
+                {processingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Crown className="mr-2 h-4 w-4" />
+                    Choose Yearly
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p>✓ Secure payment via Razorpay</p>
+            <p>✓ Cancel anytime</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowLimitDialog(false)}
+              className="w-full"
+            >
+              Maybe Later
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {/* Clear Chat Confirmation Dialog */}
       <Dialog open={showClearChatDialog} onOpenChange={setShowClearChatDialog}>
         <DialogContent>

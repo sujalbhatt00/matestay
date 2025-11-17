@@ -23,10 +23,8 @@ const ChatPage = () => {
     } else {
       setCurrentChat(null);
     }
-    // --- THIS IS THE FIX ---
-    // Removed removeNotification from the dependency array to prevent infinite loop
-  }, [conversationId, conversations]);
-  // --- END FIX ---
+  // This dependency array is correct and prevents the infinite loop
+  }, [conversationId, conversations]); 
 
   const handleSelectConversation = (conversation) => {
     navigate(`/chat/${conversation._id}`);

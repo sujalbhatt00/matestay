@@ -1,4 +1,3 @@
-d\src\pages\LocationSearchPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
@@ -22,6 +21,7 @@ const LocationSearchPage = () => {
       fetchProperties();
       fetchUsers();
     }
+    // eslint-disable-next-line
   }, [location]);
 
   const fetchProperties = async () => {
@@ -37,18 +37,18 @@ const LocationSearchPage = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const response = await axios.get(`/user/search?location=${encodeURIComponent(location)}`);
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-      setUsers([]);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+const fetchUsers = async () => {
+  setLoadingUsers(true);
+  try {
+    // Use public search for guests
+    const response = await axios.get(`/user/search-public?location=${encodeURIComponent(location)}`);
+    setUsers(response.data);
+  } catch (error) {
+    setUsers([]);
+  } finally {
+    setLoadingUsers(false);
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen">

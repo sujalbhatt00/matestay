@@ -51,8 +51,8 @@ export const createOrder = async (req, res) => {
 
     // ✅ NEW: Updated pricing
     const pricing = {
-      monthly: 1,    // ₹1/month
-      yearly: 10,    // ₹10/year
+      monthly: 29,    // ₹29/month
+      yearly: 149,    // ₹149/year
     };
 
     if (!pricing[plan]) {

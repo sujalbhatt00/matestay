@@ -1,97 +1,156 @@
-import React, { useState, useEffect } from 'react';
-import axios from '@/api/axiosInstance';
-import RoommateCard from '@/components/RoommateCard';
-import { Loader2 } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "@/api/axiosInstance";
+import RoommateCard from "@/components/RoommateCard";
+import { Loader2 } from "lucide-react";
+
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { LocationCombobox } from "@/components/ui/LocationCombobox";
 
 const FindRoommatesPage = () => {
+  const navigate = useNavigate();
+  const locationObj = useLocation();
+  const searchParams = new URLSearchParams(locationObj.search);
+
+  // Filters
+  const [location, setLocation] = useState(searchParams.get("location") || "");
+  const [genderFilter, setGenderFilter] = useState(searchParams.get("gender") || "Any");
+  const [budget, setBudget] = useState(searchParams.get("budget") || "");
+
   const [roommates, setRoommates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // --- THIS IS THE CHANGE: State for the gender filter ---
-  const [genderFilter, setGenderFilter] = useState('Any');
 
+  // Update URL instantly on filter changes
   useEffect(() => {
-    const fetchAllRoommates = async () => {
+    const params = new URLSearchParams();
+    if (location) params.set("location", location);
+    if (genderFilter !== "Any") params.set("gender", genderFilter);
+    if (budget) params.set("budget", budget);
+
+    navigate(`/find-roommates?${params.toString()}`, { replace: true });
+  }, [location, genderFilter, budget, navigate]);
+
+  // Fetch roommates
+  useEffect(() => {
+    const fetchRoommates = async () => {
       setLoading(true);
       setError(null);
       try {
-        // --- THIS IS THE CHANGE: Add gender to the API request if selected ---
         const params = new URLSearchParams();
-        if (genderFilter && genderFilter !== 'Any') {
-          params.append('gender', genderFilter);
-        }
-        const res = await axios.get(`/user/all?${params.toString()}`);
+        if (location) params.append("location", location);
+        if (genderFilter !== "Any") params.append("gender", genderFilter);
+        if (budget) params.append("budget", budget);
+        
+const res = await axios.get(`/user/search-public?${params.toString()}`);
         setRoommates(res.data);
       } catch (err) {
-        console.error('Failed to fetch roommates:', err);
-        setError('Could not load roommates. Please try again later.');
+        setError("Could not load roommates. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAllRoommates();
-  }, [genderFilter]); // <-- Re-run the effect when the filter changes
+    fetchRoommates();
+  }, [location, genderFilter, budget]);
 
   return (
-    <div className="container mx-auto px-4 py-12 pt-28 min-h-screen">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold tracking-tight">Find Your Next Roommate</h1>
-        <p className="text-lg text-muted-foreground mt-2">Browse profiles of users looking for a place.</p>
+    <div className="container mx-auto px-4 py-16 pt-28 min-h-screen">
+
+      {/* Header */}
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-bold tracking-tight">Find Your Roommate</h1>
+        <p className="text-lg text-muted-foreground mt-1">Filter profiles and match easily.</p>
       </div>
 
-      {/* --- THIS IS THE CHANGE: Filter UI --- */}
-      <div className="flex justify-center mb-12">
+      {/* Filter Section */}
+      <div className="flex flex-col md:flex-row gap-5 justify-center mb-12">
+        
+        {/* Location */}
         <div className="w-full max-w-xs">
-          <Label htmlFor="gender-filter" className="text-sm font-medium">Looking for</Label>
+          <Label className="text-sm font-medium">Location</Label>
+          <LocationCombobox
+            value={location}
+            onChange={setLocation}
+            placeholder="Search city..."
+            className="mt-1"
+          />
+        </div>
+
+        {/* Gender */}
+        <div className="w-full max-w-xs">
+          <Label className="text-sm font-medium">Gender</Label>
           <Select value={genderFilter} onValueChange={setGenderFilter}>
-            <SelectTrigger id="gender-filter" className="w-full mt-1">
-              <SelectValue placeholder="Select Gender" />
+            <SelectTrigger className="w-full mt-1">
+              <SelectValue placeholder="Select gender" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Any">Any Gender</SelectItem>
+              <SelectItem value="Any">Any</SelectItem>
               <SelectItem value="Male">Male</SelectItem>
               <SelectItem value="Female">Female</SelectItem>
               <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {/* Budget */}
+        <div className="w-full max-w-xs">
+          <Label className="text-sm font-medium">Max Budget (₹)</Label>
+          <Input
+            type="number"
+            min={0}
+            placeholder="e.g. 10000"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+
       </div>
-      {/* --- END CHANGE --- */}
 
-
+      {/* Loading */}
       {loading && (
         <div className="flex justify-center items-center py-20">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       )}
 
+      {/* Error */}
       {error && (
-        <div className="text-center py-20">
+        <div className="text-center py-16">
           <p className="text-red-500">{error}</p>
         </div>
       )}
 
+      {/* List */}
       {!loading && !error && (
         <>
           {roommates.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {roommates.map(roommate => (
-                <RoommateCard key={roommate._id} roommate={roommate} />
+            <div className="grid 
+              grid-cols-1 
+              sm:grid-cols-2 
+              md:grid-cols-3 
+              lg:grid-cols-4 
+              xl:grid-cols-5 
+              gap-6"
+            >
+              {roommates.map((user) => (
+                <RoommateCard key={user._id} roommate={user} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-card border rounded-lg p-8">
+            <div className="text-center py-20 bg-card border rounded-lg p-10">
               <h3 className="text-xl font-semibold">No Roommates Found</h3>
               <p className="text-muted-foreground mt-2">
-                No users match the current filter. Try selecting a different option.
+                Try adjusting your filters to see more results.
               </p>
             </div>
           )}
         </>
       )}
+
     </div>
   );
 };
