@@ -61,16 +61,37 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+
+    // --- NEW/UPDATED FIELDS FOR DAILY MESSAGE LIMIT ---
+    dailyMessageCount: {
+      type: Number,
+      default: 0,
+    },
+    lastMessageReset: {
+      type: Date,
+      default: () => new Date(), // Set default to current time
+    },
+    // --- END NEW/UPDATED FIELDS ---
   },
   { timestamps: true }
 );
 
+// This helper function will check and reset the daily count
+userSchema.methods.checkAndResetDailyCount = async function () {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to beginning of today
+
+  if (!this.lastMessageReset || this.lastMessageReset < today) {
+    this.dailyMessageCount = 0;
+    this.lastMessageReset = new Date();
+    await this.save();
+  }
+};
 
 userSchema.pre('save', function(next) {
   if (this.isAdmin) {
     this.isPremium = true;
     this.subscriptionTier = 'admin';
-
     if (!this.subscriptionEndDate) {
       this.subscriptionEndDate = new Date('2099-12-31');
     }

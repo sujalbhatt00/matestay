@@ -1,8 +1,11 @@
 import Message from "../models/Message.js";
 import Conversation from "../models/Conversation.js";
 import User from "../models/User.js";
+import mongoose from 'mongoose'; // Import mongoose
 
-// Add a new message with premium check
+const DAILY_MESSAGE_LIMIT = 15; // Set new limit
+
+// Add a new message with daily premium check
 export const addMessage = async (req, res) => {
   const { conversationId, text } = req.body;
   const senderId = req.user.id;
@@ -10,16 +13,12 @@ export const addMessage = async (req, res) => {
   try {
     const sender = await User.findById(senderId);
     
-    // ✅ UPDATED: Check if user has premium (includes admins who auto-get premium)
     if (!sender.isPremium) {
-      const messageCount = await Message.countDocuments({
-        conversationId,
-        senderId,
-      });
+      await sender.checkAndResetDailyCount(); // Check/reset daily count
 
-      if (messageCount >= 10) {
+      if (sender.dailyMessageCount >= DAILY_MESSAGE_LIMIT) {
         return res.status(403).json({ 
-          message: "Message limit reached. Upgrade to premium to send unlimited messages.",
+          message: "Daily message limit reached. Upgrade to premium for unlimited messages.",
           limitReached: true,
         });
       }
@@ -37,6 +36,11 @@ export const addMessage = async (req, res) => {
     await Conversation.findByIdAndUpdate(conversationId, {
       updatedAt: Date.now(),
     });
+
+    if (!sender.isPremium) {
+      sender.dailyMessageCount += 1;
+      await sender.save();
+    }
 
     res.status(201).json(savedMessage);
   } catch (error) {
@@ -66,27 +70,61 @@ export const getMessages = async (req, res) => {
       }
     );
 
-    const userMessageCount = messages.filter(m => m.senderId.toString() === userId).length;
+    const user = await User.findById(userId);
+    if (user) {
+      await user.checkAndResetDailyCount();
+      const userMessageCount = user.dailyMessageCount; 
+      res.status(200).json({
+        messages,
+        userMessageCount, 
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
 
-    res.status(200).json({
-      messages,
-      userMessageCount,
-    });
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// --- NEW FUNCTION: Clear all messages in a chat ---
+export const clearChat = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return res.status(400).json({ message: "Invalid conversation ID" });
+    }
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      members: { $in: [userId] },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found or you are not a member." });
+    }
+
+    await Message.deleteMany({ conversationId: conversationId });
+    
+    await conversation.updateOne({ updatedAt: Date.now() });
+
+    res.status(200).json({ message: "Chat cleared successfully." });
+
+  } catch (error) {
+     console.error("Error clearing chat:", error);
+     res.status(500).json({ message: "Server error" });
+  }
+};
+// --- END NEW FUNCTION ---
+
 // Get unread message count for a user
 export const getUnreadCount = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const conversations = await Conversation.find({
-      members: userId,
-    });
-
+    const conversations = await Conversation.find({ members: userId });
     const conversationIds = conversations.map(c => c._id);
 
     const unreadCount = await Message.countDocuments({
@@ -106,10 +144,8 @@ export const getUnreadCount = async (req, res) => {
 export const getUnreadMessagesByConversation = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const conversations = await Conversation.find({
-      members: userId,
-    }).populate("members", "name profilePic");
+    const conversations = await Conversation.find({ members: userId })
+      .populate("members", "name profilePic");
 
     const unreadByConversation = await Promise.all(
       conversations.map(async (convo) => {
@@ -118,7 +154,6 @@ export const getUnreadMessagesByConversation = async (req, res) => {
           senderId: { $ne: userId },
           readBy: { $ne: userId },
         });
-
         const lastUnreadMessage = await Message.findOne({
           conversationId: convo._id,
           senderId: { $ne: userId },
@@ -135,7 +170,6 @@ export const getUnreadMessagesByConversation = async (req, res) => {
     );
 
     const filteredUnread = unreadByConversation.filter(item => item.unreadCount > 0);
-
     res.json(filteredUnread);
   } catch (error) {
     console.error("Error fetching unread messages:", error);

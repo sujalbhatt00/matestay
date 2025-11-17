@@ -14,7 +14,6 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
   const { onlineUsers, notifications } = useChat();
   const [unreadCounts, setUnreadCounts] = useState({});
 
-  // ✅ NEW: Fetch unread counts for each conversation
   useEffect(() => {
     const fetchUnreadCounts = async () => {
       try {
@@ -32,13 +31,13 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
     if (user) {
       fetchUnreadCounts();
     }
-  }, [user, conversations]);
+  }, [user, conversations, notifications]); 
 
   if (!user) return null;
 
   return (
     <div className="flex flex-col h-full bg-card">
-      <div className="p-4 border-b space-y-3">
+      <div className="p-4 border-b border-border space-y-3">
         <h2 className="text-2xl font-bold text-foreground">Messages</h2>
         
         <div className="relative">
@@ -50,7 +49,7 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {(!conversations || conversations.length === 0) ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
             <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
@@ -72,11 +71,10 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
             const isActive = convo._id === currentChatId;
             const isOnline = onlineUsers.some(ou => ou.userId === otherMember._id);
             
-            // ✅ UPDATED: Use persistent unread count
             const unreadCount = unreadCounts[convo._id] || 0;
             const isUnread = unreadCount > 0;
             
-            const timestamp = convo.lastMessageTimestamp ? new Date(convo.lastMessageTimestamp) : new Date();
+            const timestamp = convo.lastMessageTimestamp ? new Date(convo.lastMessageTimestamp) : new Date(convo.updatedAt);
 
             return (
               <div
@@ -101,31 +99,31 @@ const ConvoList = ({ conversations, onSelectConversation, currentChatId }) => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h3 className={`font-semibold truncate ${
-                      isUnread ? 'text-foreground' : 'text-foreground/90'
-                    }`}>
-                      {otherMember.name || 'Unknown User'}
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                      {formatDistanceToNow(timestamp, { addSuffix: true })}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-2">
-                    <p className={`text-sm truncate ${
-                      isUnread 
-                        ? 'font-semibold text-foreground' 
-                        : 'text-muted-foreground'
-                    }`}>
-                      {convo.lastMessage}
-                    </p>
-                    {isUnread && (
-                      <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </div>
+                  <h3 className={`font-semibold truncate ${
+                    isUnread ? 'text-foreground' : 'text-foreground/90'
+                  }`}>
+                    {otherMember.name || 'Unknown User'}
+                  </h3>
+                  <p className={`text-sm truncate ${
+                    isUnread 
+                      ? 'font-semibold text-foreground' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    {convo.lastMessage}
+                  </p>
+                </div>
+                
+                <div className="flex flex-col items-end flex-shrink-0 space-y-1 ml-2">
+                  <p className={`text-[10px] whitespace-nowrap ${
+                    isUnread ? 'text-primary font-medium' : 'text-muted-foreground'
+                  }`}>
+                    {formatDistanceToNow(timestamp, { addSuffix: true })}
+                  </p>
+                  {isUnread && (
+                    <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </div>
               </div>
             );

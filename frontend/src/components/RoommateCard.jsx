@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import { useAuth } from '@/context/AuthContext';
+import { useChat } from '@/context/ChatContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,10 +14,10 @@ const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
 const RoommateCard = ({ roommate }) => {
   const { user } = useAuth();
+  const { addConversation } = useChat();
   const navigate = useNavigate();
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  // Check if the card is for the logged-in user
   const isOwnProfile = user && user._id === roommate._id;
 
   const handleStartChat = async () => {
@@ -24,7 +25,6 @@ const RoommateCard = ({ roommate }) => {
       toast.error("Please log in to start a chat.");
       return;
     }
-
     if (isOwnProfile) {
       toast.info("You cannot start a chat with yourself.");
       return;
@@ -36,7 +36,10 @@ const RoommateCard = ({ roommate }) => {
         receiverId: roommate._id,
       });
       
+      addConversation(res.data);
+      
       navigate(`/chat/${res.data._id}`);
+
     } catch (err) {
       console.error("Failed to start chat:", err);
       toast.error("Could not start chat. Please try again later.");
@@ -60,7 +63,6 @@ const RoommateCard = ({ roommate }) => {
           <AvatarFallback>{roommate.name ? roommate.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
         </Avatar>
         
-        {/* Display name and "You" badge */}
         <div className="flex justify-center items-center gap-2 mb-1">
           <h3 className="text-lg font-semibold text-foreground">{roommate.name}</h3>
           {isOwnProfile && <Badge variant="secondary">You</Badge>}
@@ -69,9 +71,7 @@ const RoommateCard = ({ roommate }) => {
         <p className="text-sm text-muted-foreground mb-4">{roommate.occupation || 'Student'}</p>
         
         <div className="flex justify-center space-x-2">
-          {/* Conditional button rendering based on whether it's the user's own profile */}
           {isOwnProfile ? (
-            // Show "View Your Profile" button if it's the logged-in user
             <Button 
               variant="outline" 
               size="sm" 
@@ -85,7 +85,6 @@ const RoommateCard = ({ roommate }) => {
               View Your Profile
             </Button>
           ) : (
-            // Show both "View Profile" and "Message" buttons for other users
             <>
               <Button 
                 variant="outline" 

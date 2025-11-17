@@ -2,7 +2,6 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import mongoose from 'mongoose';
 
-// Create or return existing conversation
 export const newConversation = async (req, res) => {
   const senderId = req.user.id;
   const { receiverId } = req.body;
@@ -23,25 +22,21 @@ export const newConversation = async (req, res) => {
     .lean();
 
     if (convo) {
-      // If conversation exists, just add the last message info and return
       const lastMessage = await Message.findOne({ conversationId: convo._id }).sort({ createdAt: -1 }).lean();
       convo.lastMessage = lastMessage ? lastMessage.text : "No messages yet";
       convo.lastMessageTimestamp = lastMessage ? lastMessage.createdAt : convo.updatedAt;
       return res.status(200).json(convo);
     }
 
-    // If it doesn't exist, create a new one
     const newConvo = new Conversation({
       members: [senderId, receiverId],
     });
     const savedConvo = await newConvo.save();
 
-    // Populate the newly created conversation
     let populatedConvo = await Conversation.findById(savedConvo._id)
       .populate("members", "name profilePic")
       .lean();
       
-    // Add the last message info to match the format of getConversations
     populatedConvo.lastMessage = "No messages yet";
     populatedConvo.lastMessageTimestamp = populatedConvo.updatedAt;
 
@@ -52,7 +47,6 @@ export const newConversation = async (req, res) => {
   }
 };
 
-// Get Conversations for a user (Simplified and Reliable)
 export const getConversations = async (req, res) => {
   try {
     const conversations = await Conversation.find({
@@ -80,5 +74,35 @@ export const getConversations = async (req, res) => {
   } catch (error) {
     console.error("Error in getConversations:", error);
     res.status(500).json({ message: "Server error while fetching conversations." });
+  }
+};
+
+export const deleteConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return res.status(400).json({ message: "Invalid conversation ID" });
+    }
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      members: { $in: [userId] },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found or you are not a member." });
+    }
+
+    await Message.deleteMany({ conversationId: conversationId });
+
+    await Conversation.findByIdAndDelete(conversationId);
+
+    res.status(200).json({ message: "Conversation deleted successfully." });
+
+  } catch (error) {
+     console.error("Error deleting conversation:", error);
+     res.status(500).json({ message: "Server error" });
   }
 };

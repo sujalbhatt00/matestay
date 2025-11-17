@@ -23,7 +23,10 @@ const ChatPage = () => {
     } else {
       setCurrentChat(null);
     }
-  }, [conversationId, conversations, removeNotification]);
+    // --- THIS IS THE FIX ---
+    // Removed removeNotification from the dependency array to prevent infinite loop
+  }, [conversationId, conversations]);
+  // --- END FIX ---
 
   const handleSelectConversation = (conversation) => {
     navigate(`/chat/${conversation._id}`);
@@ -38,12 +41,11 @@ const ChatPage = () => {
   }
 
   return (
-    // ✅ FIX: Changed z-index to be below navbar (z-50 is navbar)
     <div className="fixed inset-0 flex bg-background z-30">
-      {/* Add spacing for desktop navbar (80px) and mobile (64px + 64px for bottom nav) */}
       <div className="w-full h-full pt-20 pb-16 md:pb-0 flex">
+        
         {/* Conversation List */}
-        <div className={`w-full md:w-1/3 lg:w-1/4 border-r ${conversationId ? 'hidden md:flex' : 'flex'} flex-col bg-card`}>
+        <div className={`w-full md:w-1/3 lg:w-1/4 border-r border-border ${conversationId ? 'hidden md:flex' : 'flex'} flex-col bg-card`}>
           {loadingConversations ? (
             <div className="flex justify-center items-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
