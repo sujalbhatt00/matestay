@@ -14,4 +14,38 @@ router.get("/", protect, getConversations);
 
 router.delete("/:conversationId", protect, deleteConversation);
 
+export default router
+import express from "express";
+import Joi from "joi";
+import {
+  newConversation,
+  getConversations,
+  deleteConversation,
+} from "../controllers/conversationController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
+import { validateParams } from "../middleware/validate.js";
+import asyncHandler from "../middleware/asyncHandler.js";
+
+const router = express.Router();
+
+const idParamSchema = Joi.object({
+  conversationId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().message("Invalid conversation id"),
+});
+
+// create new conversation (protected, rate-limited)
+router.post("/", protect, authLimiter, asyncHandler(newConversation));
+
+// list conversations (protected, rate-limited)
+router.get("/", protect, authLimiter, asyncHandler(getConversations));
+
+// delete conversation (protected, rate-limited, validate param)
+router.delete(
+  "/:conversationId",
+  protect,
+  authLimiter,
+  validateParams(idParamSchema),
+  asyncHandler(deleteConversation)
+);
+
 export default router;

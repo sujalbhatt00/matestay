@@ -1,4 +1,5 @@
 import express from "express";
+import Joi from "joi";
 import {
   updateProfile,
   getUserProfile,
@@ -7,28 +8,37 @@ import {
   getFeaturedUsers,
   deleteAccount,
   deleteCloudinaryImage,
-  getAllUsers, 
+  getAllUsers,
   changePassword,
   getProfileViews,
-  getUserCount
+  getUserCount,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
+import { validateBody, validateParams } from "../middleware/validate.js";
+import { updateProfileSchema } from "../validation/schema.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 
 const router = express.Router();
 
-router.get("/featured", getFeaturedUsers);
-router.get("/public-profile/:userId", getPublicUserProfile);
-router.get("/search-public", searchUsers);
-router.get("/count", getUserCount);
+const idParamSchema = Joi.object({
+  userId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().message("Invalid user id"),
+});
 
-router.put("/update", protect, updateProfile);
-router.get("/profile", protect, getUserProfile);
-router.get("/search", protect, searchUsers);
-router.delete("/delete-account", protect, deleteAccount);
-router.post("/delete-cloudinary-image", protect, deleteCloudinaryImage);
-router.get("/all", protect, getAllUsers);
-router.put("/update-password", protect, changePassword);
+// Public
+router.get("/featured", asyncHandler(getFeaturedUsers));
+router.get("/public-profile/:userId", validateParams(idParamSchema), asyncHandler(getPublicUserProfile));
+router.get("/search-public", asyncHandler(searchUsers));
+router.get("/count", asyncHandler(getUserCount));
 
-router.get("/views", protect, getProfileViews);
+// Protected (rate-limited + async wrapper)
+router.put("/update", protect, authLimiter, validateBody(updateProfileSchema), asyncHandler(updateProfile));
+router.get("/profile", protect, authLimiter, asyncHandler(getUserProfile));
+router.get("/search", protect, authLimiter, asyncHandler(searchUsers));
+router.delete("/delete-account", protect, authLimiter, asyncHandler(deleteAccount));
+router.post("/delete-cloudinary-image", protect, authLimiter, asyncHandler(deleteCloudinaryImage));
+router.get("/all", protect, authLimiter, asyncHandler(getAllUsers));
+router.put("/update-password", protect, authLimiter, asyncHandler(changePassword));
+router.get("/views", protect, authLimiter, asyncHandler(getProfileViews));
 
 export default router;

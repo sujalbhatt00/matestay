@@ -90,7 +90,7 @@ const AboutUs = () => {
               <AvatarFallback className="text-2xl bg-primary text-white">SK</AvatarFallback>
             </Avatar>
             <h3 className="text-2xl font-bold">Shashank Kumar</h3>
-            <p className="text-primary font-medium mb-3">Co-Founder & Lead Developer</p>
+            <p className="text-primary font-medium mb-3">Co-Founder</p>
             <p className="text-sm text-muted-foreground max-w-xs">
               Passionate about building scalable tech solutions and solving real-world problems through code.
             </p>
@@ -104,7 +104,7 @@ const AboutUs = () => {
               <AvatarFallback className="text-2xl bg-primary text-white">SB</AvatarFallback>
             </Avatar>
             <h3 className="text-2xl font-bold">Sujal Bhatt</h3>
-            <p className="text-primary font-medium mb-3">Co-Founder & Strategy</p>
+            <p className="text-primary font-medium mb-3">Co-Founder</p>
             <p className="text-sm text-muted-foreground max-w-xs">
               Driven by innovation and creating seamless user experiences for the community.
             </p>

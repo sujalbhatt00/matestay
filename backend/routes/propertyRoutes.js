@@ -1,27 +1,48 @@
+// ...existing code...
 import express from "express";
+import Joi from "joi";
 import {
   createProperty,
   getPropertyById,
   searchProperties,
-   getFeaturedProperties,
-  getUserProperties, // Make sure this is imported
+  getFeaturedProperties,
+  getUserProperties,
   updateProperty,
-   getPropertyStats,
+  getPropertyStats,
   deleteProperty,
 } from "../controllers/propertyController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
+import { validateBody, validateParams } from "../middleware/validate.js";
+import { createPropertySchema, updatePropertySchema } from "../validation/schema.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 
 const router = express.Router();
 
-// --- Define specific routes BEFORE dynamic ':id' routes ---
-router.get("/search", searchProperties); // Search listings (public)
-router.get("/my-listings", protect, getUserProperties); // Get user's listings (protected)
-router.post("/", protect, createProperty); // Create a new listing (protected)
-router.get("/featured", getFeaturedProperties); // Get featured listings (public)
-router.get("/stats", getPropertyStats); // Get property statistics (public)
-// --- Define dynamic ':id' routes AFTER specific ones ---
-router.get("/:id", getPropertyById); // Get a single listing by its ID (public)
-router.put("/:id", protect, updateProperty); // Update a specific listing (protected)
-router.delete("/:id", protect, deleteProperty); // Delete a specific listing (protected)
+const idParamSchema = Joi.object({
+  id: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().message("Invalid id format"),
+});
+
+// --- Public routes (specific before dynamic) ---
+router.get("/search", asyncHandler(searchProperties));
+router.get("/featured", asyncHandler(getFeaturedProperties));
+router.get("/stats", asyncHandler(getPropertyStats));
+
+// Get single property by id (validate params)
+router.get("/:id", validateParams(idParamSchema), asyncHandler(getPropertyById));
+
+// --- Protected routes (rate-limited) ---
+router.get("/my-listings", protect, authLimiter, asyncHandler(getUserProperties));
+router.post("/", protect, authLimiter, validateBody(createPropertySchema), asyncHandler(createProperty));
+router.put(
+  "/:id",
+  protect,
+  authLimiter,
+  validateParams(idParamSchema),
+  validateBody(updatePropertySchema),
+  asyncHandler(updateProperty)
+);
+router.delete("/:id", protect, authLimiter, validateParams(idParamSchema), asyncHandler(deleteProperty));
 
 export default router;
+// ...existing code...
