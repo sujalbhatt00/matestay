@@ -53,7 +53,7 @@ export const deleteUserAdmin = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ Prevent deleting admin accounts
+    //  Prevent deleting admin accounts
     if (user.isAdmin) {
       return res.status(400).json({ message: "Cannot delete admin accounts" });
     }
@@ -75,7 +75,7 @@ export const deleteUserAdmin = async (req, res) => {
     // Delete conversations
     await Conversation.deleteMany({ _id: { $in: conversationIds } });
 
-    // ✅ Delete reviews written by and about this user
+    //  Delete reviews written by and about this user
     await Review.deleteMany({ $or: [{ reviewer: userId }, { reviewee: userId }] });
     console.log("✅ Reviews deleted");
 

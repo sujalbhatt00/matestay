@@ -120,7 +120,7 @@ export const updateReview = async (req, res) => {
   }
 };
 
-// ✅ UPDATED: Delete a review (users can delete their own, admins can delete any)
+// UPDATED: Delete a review (users can delete their own, admins can delete any)
 export const deleteReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
@@ -146,7 +146,7 @@ export const deleteReview = async (req, res) => {
     await Review.findByIdAndDelete(reviewId);
     await updateUserRating(revieweeId);
 
-    console.log(`✅ Review deleted by ${user.isAdmin ? 'admin' : 'user'}:`, reviewId);
+    console.log(` Review deleted by ${user.isAdmin ? 'admin' : 'user'}:`, reviewId);
     res.json({ message: "Review deleted successfully" });
   } catch (error) {
     console.error("Error deleting review:", error);

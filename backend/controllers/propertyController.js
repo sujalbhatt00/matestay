@@ -48,7 +48,7 @@ export const getPropertyById = async (req, res) => {
   }
 };
 
-// --- Search Properties --- ✅ KEEP ONLY THIS ONE
+// --- Search Properties ---  KEEP ONLY THIS ONE
 export const searchProperties = async (req, res) => {
   try {
     const { location, propertyType, minPrice, maxPrice, bedrooms } = req.query;

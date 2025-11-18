@@ -294,13 +294,13 @@ export const changePassword = async (req, res) => {
     await user.save();
 
     sendPasswordChangeConfirmationEmail(user.email, user.name)
-      .then(() => console.log("✅ Password change confirmation sent to:", user.email))
-      .catch((error) => console.error("❌ SendGrid error (password change confirm):", error));
+      .then(() => console.log(" Password change confirmation sent to:", user.email))
+      .catch((error) => console.error(" SendGrid error (password change confirm):", error));
 
     res.status(200).json({ message: "Password changed successfully." });
 
   } catch (error) {
-    console.error("❌ Change Password error:", error);
+    console.error(" Change Password error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

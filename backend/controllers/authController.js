@@ -163,7 +163,7 @@ export const login = async (req, res) => {
       profileSetupComplete: user.profileSetupComplete || false,
     };
 
-    console.log("✅ Login successful:", email);
+    console.log(" Login successful:", email);
     return res.status(200).json({ 
       message: "Login successful",
       token, 
@@ -178,7 +178,7 @@ export const login = async (req, res) => {
 
 export const resendVerification = async (req, res) => {
   try {
-    console.log("🔵 Resend verification request:", req.body.email);
+    console.log(" Resend verification request:", req.body.email);
     
     const { email } = req.body;
 
@@ -189,12 +189,12 @@ export const resendVerification = async (req, res) => {
     const user = await User.findOne({ email });
     
     if (!user) {
-      console.log("❌ User not found:", email);
+      console.log(" User not found:", email);
       return res.status(404).json({ message: "User not found with this email" });
     }
 
     if (user.verified) {
-      console.log("⚠️ Email already verified:", email);
+      console.log(" Email already verified:", email);
       return res.status(400).json({ message: "Email is already verified" });
     }
 
@@ -205,14 +205,14 @@ export const resendVerification = async (req, res) => {
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
     sendVerificationEmail(email, user.name, verificationUrl)
-      .then(() => console.log("✅ Verification email resent via SendGrid to:", email))
-      .catch((error) => console.error("❌ Resend verification error (SendGrid):", error));
+      .then(() => console.log(" Verification email resent via SendGrid to:", email))
+      .catch((error) => console.error(" Resend verification error (SendGrid):", error));
 
     res.status(200).json({ 
       message: "Verification email resent successfully. Please check your inbox." 
     });
   } catch (error) {
-    console.error("❌ Resend verification error:", error);
+    console.error("Resend verification error:", error);
     res.status(500).json({ message: "Failed to resend verification email" });
   }
 };
@@ -222,7 +222,7 @@ export const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      console.log("🔵 Forgot Password: Email not found (but sending 200).");
+      console.log(" Forgot Password: Email not found (but sending 200).");
       return res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent." });
     }
 
@@ -233,13 +233,13 @@ export const forgotPassword = async (req, res) => {
     const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     sendPasswordResetEmail(user.email, user.name, resetLink)
-      .then(() => console.log("✅ Password reset email sent to:", user.email))
+      .then(() => console.log(" Password reset email sent to:", user.email))
       .catch((error) => console.error("❌ SendGrid error (forgot password):", error));
     
     res.status(200).json({ message: "If an account with that email exists, a password reset link has been sent." });
 
   } catch (error) {
-    console.error("❌ Forgot Password error:", error);
+    console.error(" Forgot Password error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -270,13 +270,13 @@ export const resetPassword = async (req, res) => {
     await user.save();
 
     sendPasswordChangeConfirmationEmail(user.email, user.name)
-      .then(() => console.log("✅ Password change confirmation sent to:", user.email))
+      .then(() => console.log(" Password change confirmation sent to:", user.email))
       .catch((error) => console.error("❌ SendGrid error (password change confirm):", error));
 
     res.status(200).json({ message: "Password reset successful. You can now log in." });
 
   } catch (error) {
-    console.error("❌ Reset Password error:", error);
+    console.error(" Reset Password error:", error);
     if (error.name === 'TokenExpiredError') {
       return res.status(400).json({ message: "Password reset link has expired. Please request a new one." });
     }

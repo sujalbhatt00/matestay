@@ -3,7 +3,7 @@ import crypto from "crypto";
 import Payment from "../models/Payment.js";
 import User from "../models/User.js";
 
-console.log("🔵 Razorpay Configuration Check:");
+console.log(" Razorpay Configuration Check:");
 console.log("Key ID exists:", !!process.env.RAZORPAY_KEY_ID);
 console.log("Key Secret exists:", !!process.env.RAZORPAY_KEY_SECRET);
 
@@ -11,7 +11,7 @@ let razorpay = null;
 
 const initializeRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    console.error("❌ Razorpay credentials missing");
+    console.error(" Razorpay credentials missing");
     return null;
   }
 
@@ -20,17 +20,17 @@ const initializeRazorpay = () => {
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
-    console.log("✅ Razorpay initialized successfully");
+    console.log(" Razorpay initialized successfully");
     return instance;
   } catch (error) {
-    console.error("❌ Failed to initialize Razorpay:", error.message);
+    console.error(" Failed to initialize Razorpay:", error.message);
     return null;
   }
 };
 
 razorpay = initializeRazorpay();
 
-// ✅ UPDATED: New pricing structure
+//  UPDATED: New pricing structure
 export const createOrder = async (req, res) => {
   try {
     if (!razorpay) {
@@ -49,7 +49,7 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Plan is required" });
     }
 
-    // ✅ NEW: Updated pricing
+    //  NEW: Updated pricing
     const pricing = {
       monthly: 29,    // ₹29/month
       yearly: 149,    // ₹149/year
@@ -71,9 +71,9 @@ export const createOrder = async (req, res) => {
       },
     };
 
-    console.log("📤 Creating Razorpay order:", options);
+    console.log(" Creating Razorpay order:", options);
     const order = await razorpay.orders.create(options);
-    console.log("✅ Order created:", order.id);
+    console.log(" Order created:", order.id);
 
     const subscriptionEndDate = new Date();
     if (plan === "monthly") {
@@ -100,7 +100,7 @@ export const createOrder = async (req, res) => {
       keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
-    console.error("❌ Error creating order:", error);
+    console.error(" Error creating order:", error);
     res.status(500).json({ 
       message: "Failed to create order", 
       error: error.message 
@@ -150,7 +150,7 @@ export const verifyPayment = async (req, res) => {
       subscriptionEndDate: payment.subscriptionEndDate,
     });
   } catch (error) {
-    console.error("❌ Payment verification error:", error);
+    console.error(" Payment verification error:", error);
     res.status(500).json({ message: "Payment verification failed" });
   }
 };
