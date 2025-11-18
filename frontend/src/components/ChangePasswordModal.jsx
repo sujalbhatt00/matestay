@@ -3,7 +3,7 @@ import axios from "@/api/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock } from "lucide-react"; // <-- Removed Eye and EyeOff
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 const ChangePasswordModal = ({ onClose }) => {
@@ -13,7 +13,9 @@ const ChangePasswordModal = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // --- Removed visibility state variables ---
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +49,7 @@ const ChangePasswordModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md h-full" onClick={onClose}>
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-6 m-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold">Change Password</h3>
@@ -64,54 +66,82 @@ const ChangePasswordModal = ({ onClose }) => {
           {/* Current Password */}
           <div>
             <Label htmlFor="oldPassword">Current Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+            <div className="relative mt-1">
+              {/* Lock (Left) - Absolute Centered */}
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+              
               <Input 
                 id="oldPassword"
                 name="oldPassword" 
-                type="password" // <-- Set type to password
+                type={showOld ? "text" : "password"}
                 value={oldPassword} 
                 onChange={(e) => setOldPassword(e.target.value)} 
                 required 
-                className="pl-10" // <-- Removed pr-10
+                className="pl-10 pr-10" 
               />
-              {/* --- Removed Eye Button --- */}
+              
+              {/* Eye (Right) - Absolute Centered */}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent"
+                onClick={() => setShowOld(!showOld)}
+              >
+                {showOld ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+              </Button>
             </div>
           </div>
           
           {/* New Password */}
           <div>
             <Label htmlFor="newPassword">New Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+            <div className="relative mt-1">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
               <Input 
                 id="newPassword"
                 name="newPassword" 
-                type="password" // <-- Set type to password
+                type={showNew ? "text" : "password"}
                 value={newPassword} 
                 onChange={(e) => setNewPassword(e.target.value)} 
                 required 
-                className="pl-10" // <-- Removed pr-10
+                className="pl-10 pr-10"
               />
-              {/* --- Removed Eye Button --- */}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent"
+                onClick={() => setShowNew(!showNew)}
+              >
+                {showNew ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+              </Button>
             </div>
           </div>
 
           {/* Confirm New Password */}
           <div>
             <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+            <div className="relative mt-1">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
               <Input 
                 id="confirmPassword"
                 name="confirmPassword" 
-                type="password" // <-- Set type to password
+                type={showConfirm ? "text" : "password"}
                 value={confirmPassword} 
                 onChange={(e) => setConfirmPassword(e.target.value)} 
                 required 
-                className="pl-10" // <-- Removed pr-10
+                className="pl-10 pr-10"
               />
-              {/* --- Removed Eye Button --- */}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent"
+                onClick={() => setShowConfirm(!showConfirm)}
+              >
+                {showConfirm ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+              </Button>
             </div>
           </div>
           

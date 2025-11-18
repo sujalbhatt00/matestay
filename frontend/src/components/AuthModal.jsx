@@ -54,7 +54,11 @@ export default function AuthModal({ onClose }) {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
     try {
       console.log("Attempting registration...");
@@ -63,6 +67,7 @@ export default function AuthModal({ onClose }) {
         email: form.email,
         password: form.password,
       });
+      
       console.log("Registration response:", data);
       toast.success(data.message || "Registration successful! Check your email.");
       setTab("login");
@@ -78,7 +83,11 @@ export default function AuthModal({ onClose }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
     try {
       console.log("Attempting login...");
@@ -86,6 +95,7 @@ export default function AuthModal({ onClose }) {
         email: form.email,
         password: form.password,
       });
+      
       console.log("Login response:", data);
       login(data.user, data.token);
       toast.success("Login successful!");
@@ -93,6 +103,7 @@ export default function AuthModal({ onClose }) {
     } catch (err) {
       console.error("Login error:", err);
       const errorData = err.response?.data;
+      
       if (errorData?.needsVerification) {
         toast.error(
           <div className="flex flex-col gap-2">
@@ -125,8 +136,8 @@ export default function AuthModal({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-6 m-4" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-6 m-4">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold">{tab === "login" ? "Welcome Back" : "Create Account"}</h3>
           <button 
@@ -170,7 +181,7 @@ export default function AuthModal({ onClose }) {
           <form onSubmit={handleSignup} className="space-y-4">
             <div>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   name="name" 
                   placeholder="Full name" 
@@ -185,7 +196,7 @@ export default function AuthModal({ onClose }) {
 
             <div>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   name="email" 
                   type="email" 
@@ -201,7 +212,7 @@ export default function AuthModal({ onClose }) {
 
             <div>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   name="password" 
                   type="password" 
@@ -234,7 +245,7 @@ export default function AuthModal({ onClose }) {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   name="email" 
                   type="email" 
@@ -250,7 +261,8 @@ export default function AuthModal({ onClose }) {
 
             <div>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                {/* --- FIX: Centered Icon --- */}
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   name="password" 
                   type="password" 

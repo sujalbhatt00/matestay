@@ -118,11 +118,18 @@
   }
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+  }
+  html {
+    height: 100%;
+  }
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 }
 
-/* --- NEW STYLES ADDED --- */
-/* Custom Scrollbar for Chat */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
@@ -132,7 +139,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2); /* White with transparency */
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
 }
 
@@ -140,8 +147,12 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* For Firefox */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
 }

@@ -3,7 +3,9 @@ import User from "../models/User.js";
 import Property from "../models/Property.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
+import ProfileView from "../models/ProfileView.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { sendPasswordChangeConfirmationEmail } from "../services/emailSendgrid.js";
 
 cloudinary.config({
@@ -88,15 +90,63 @@ export const updateProfile = async (req, res) => {
 
 export const getPublicUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select("-password");
+    const profileId = req.params.userId;
+    const user = await User.findById(profileId).select("-password");
+    
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    let viewerId = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+      try {
+        const token = req.headers.authorization.split(" ")[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        viewerId = decoded.id;
+      } catch (err) {
+      }
+    }
+
+    if (viewerId && viewerId !== profileId) {
+      await ProfileView.findOneAndUpdate(
+        { profileId: profileId, viewerId: viewerId },
+        { viewedAt: Date.now() },
+        { upsert: true, new: true }
+      );
+    }
+
     res.json(user);
   } catch (error) {
+    console.error("Error fetching public profile:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getProfileViews = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user.isPremium) {
+      const count = await ProfileView.countDocuments({ profileId: userId });
+      return res.status(403).json({ 
+        message: "Upgrade to Premium to see who viewed your profile.",
+        count: count,
+        requiresPremium: true 
+      });
+    }
+
+    const views = await ProfileView.find({ profileId: userId })
+      .populate("viewerId", "name profilePic occupation")
+      .sort({ viewedAt: -1 });
+
+    res.json(views);
+
+  } catch (error) {
+    console.error("Error fetching profile views:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 export const searchUsers = async (req, res) => {
   try {

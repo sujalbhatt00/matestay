@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import MultiStepProfile from "../components/MultiStepProfile";
 import ViewProfile from "../components/ViewProfile";
 import ReviewSection from "../components/ReviewSection";
+import ProfileViewsModal from "../components/ProfileViewsModal";
 
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -28,6 +29,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showViewsModal, setShowViewsModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -91,15 +93,21 @@ export default function Profile() {
         ) : (
           <div className="space-y-8">
 
-            {/* VIEW PROFILE */}
+            <div className="flex justify-end max-w-3xl mx-auto">
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowViewsModal(true)}
+                className="shadow-sm"
+              >
+                <Eye className="mr-2 h-4 w-4" /> Who Viewed My Profile?
+              </Button>
+            </div>
             <ViewProfile user={user} onEdit={handleEditProfile} />
 
-            {/* REVIEWS SECTION */}
             <div className="max-w-3xl mx-auto">
               <ReviewSection userId={user._id} />
             </div>
 
-            {/* ================= DELETE ACCOUNT SECTION (NEW CLEAN UI) ================= */}
             <div className="max-w-3xl mx-auto w-full">
               <div
                 className="
@@ -113,7 +121,6 @@ export default function Profile() {
               >
                 <div className="flex items-start gap-4">
 
-                  {/* SOFT WARNING ICON */}
                   <div className="bg-amber-100 dark:bg-amber-900/20 p-3 rounded-xl">
                     <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                   </div>
@@ -126,7 +133,6 @@ export default function Profile() {
                       permanently removed from Matestay.
                     </p>
 
-                    {/* SOFT INFO BOX */}
                     <div
                       className="
                         bg-muted/50 
@@ -149,7 +155,6 @@ export default function Profile() {
                       </ul>
                     </div>
 
-                    {/* DELETE BUTTON */}
                     <Button
                       onClick={() => setShowDeleteDialog(true)}
                       variant="destructive"
@@ -166,7 +171,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* ================= DELETE CONFIRMATION DIALOG ================= */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
@@ -218,6 +222,10 @@ export default function Profile() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ProfileViewsModal 
+        isOpen={showViewsModal} 
+        onClose={() => setShowViewsModal(false)} 
+      />
     </>
   );
 }
