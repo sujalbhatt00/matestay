@@ -304,3 +304,15 @@ export const changePassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getUserCount = async (req, res) => {
+  try {
+    const count = await User.countDocuments();
+    // Optional: You can add a base number if you want to look bigger at the start
+    // const displayCount = count + 100; 
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error("Error fetching user count:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

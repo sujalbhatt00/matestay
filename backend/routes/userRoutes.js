@@ -9,7 +9,8 @@ import {
   deleteCloudinaryImage,
   getAllUsers, 
   changePassword,
-  getProfileViews 
+  getProfileViews,
+  getUserCount
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -18,6 +19,7 @@ const router = express.Router();
 router.get("/featured", getFeaturedUsers);
 router.get("/public-profile/:userId", getPublicUserProfile);
 router.get("/search-public", searchUsers);
+router.get("/count", getUserCount);
 
 router.put("/update", protect, updateProfile);
 router.get("/profile", protect, getUserProfile);

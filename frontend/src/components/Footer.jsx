@@ -1,42 +1,46 @@
+import React from 'react';
 import { Mail, Phone, MapPin, Instagram, Linkedin } from "lucide-react";
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border py-14 mt-20">
+    <footer className="bg-card border-t border-border pt-16 pb-8 mt-auto">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-
-          {/* Brand */}
-          <div>
+        
+        {/* Top Section: Brand & Socials */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          
+          {/* Brand Column */}
+          <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <img src="/Logo.png" width={40} alt="Matestay" />
-              <span className="text-xl font-bold">Matestay</span>
+              <span className="text-2xl font-bold tracking-tight">Matestay</span>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Helping you find roommates and safe living spaces with 
-              trust, transparency, and comfort.
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              Connecting you with the perfect roommates and safe living spaces. Trust, transparency, and comfort are at our core.
             </p>
-
-            {/* Social */}
-            <div className="mt-5">
-              <h4 className="font-semibold mb-3 text-primary">Follow Us</h4>
-              <div className="flex items-center gap-5">
-                <a
-                  href="https://www.instagram.com/sujalbhatt00"
-                  target="_blank"
-                  className="hover:text-primary"
-                >
+            
+            {/* Social Icons with Labels */}
+            <div className="flex flex-col gap-3">
+              {/* Shashank */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-muted-foreground w-16">Shashank:</span>
+                <a href="https://www.linkedin.com/in/shashank-kumar-70742b292/" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Shashank on LinkedIn">
+                  <Linkedin className="h-5 w-5" />
+                </a>
+                <a href="https://www.instagram.com/shashank__.kumar/" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Shashank on Instagram">
                   <Instagram className="h-5 w-5" />
                 </a>
-
-                <a
-                  href="https://www.linkedin.com/in/sujal-b-139067249/"
-                  target="_blank"
-                  className="hover:text-primary"
-                >
+              </div>
+              
+              {/* Sujal */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-muted-foreground w-16">Sujal:</span>
+                <a href="https://www.linkedin.com/in/sujal-b-139067249/" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Sujal on LinkedIn">
                   <Linkedin className="h-5 w-5" />
+                </a>
+                <a href="https://www.instagram.com/sujalbhatt00" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Sujal on Instagram">
+                  <Instagram className="h-5 w-5" />
                 </a>
               </div>
             </div>
@@ -44,53 +48,73 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold mb-4 text-primary">Quick Links</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/about" className="hover:text-primary">About Us</a></li>
-              <li><a href="/contact" className="hover:text-primary">Contact</a></li>
-              <li><a href="/help" className="hover:text-primary">Help Center</a></li>
-              <li><a href="/privacy" className="hover:text-primary">Privacy Policy</a></li>
-              <li><a href="/terms" className="hover:text-primary">Terms & Conditions</a></li>
+            <h4 className="font-semibold mb-4 text-foreground">Company</h4>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-primary transition-colors">Contact Support</Link></li>
+              <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
+              <li><Link to="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
             </ul>
           </div>
 
-          {/* Browse */}
+          {/* Explore */}
           <div>
-            <h4 className="font-semibold mb-4 text-primary">Explore</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/find-roommates" className="hover:text-primary">Find Roommates</a></li>
-              <li><a href="" className="hover:text-primary">Search Properties</a></li>
-              <li><a href="/" className="hover:text-primary">Messages</a></li>
+            <h4 className="font-semibold mb-4 text-foreground">Explore</h4>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li><Link to="/find-roommates" className="hover:text-primary transition-colors">Find Roommates</Link></li>
+              <li><Link to="/properties/search" className="hover:text-primary transition-colors">Browse Properties</Link></li>
+              <li><Link to="/premium" className="hover:text-primary transition-colors">Go Premium</Link></li>
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div>
+            <h4 className="font-semibold mb-4 text-foreground">Contact</h4>
+            <ul className="space-y-4 text-sm text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span>Dehradun, Uttarakhand, India</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Phone className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-1">
+                  <span>+91 8979312715</span>
+                  <span>+91 9304923385</span> {/* <-- Added New Number */}
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Mail className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-1">
+                   <a href="mailto:matestaypvt@gmail.com" className="hover:text-primary transition-colors">matestaypvt@gmail.com</a>
+                   <a href="mailto:shashankmuz3@gmail.com" className="hover:text-primary transition-colors">shashankmuz3@gmail.com</a>
+                   <a href="mailto:sujalbhatt500@gmail.com" className="hover:text-primary transition-colors">sujalbhatt500@gmail.com</a>
+                </div>
+              </li>
             </ul>
           </div>
         </div>
 
-        {/* CONTACT SECTION */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            <span>sujalbhatt500@gmail.com & matestaypvt@gmail.com</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4" />
-            <span>+91 8979312715</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span>Dehradun, Uttarakhand, India</span>
+        {/* Bottom Section: Copyright & Legal */}
+        <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground text-center md:text-left">
+            © {new Date().getFullYear()} <strong>Matestay Private Limited</strong>. All rights reserved. <br />
+                <div className="flex flex-row gap-1">
+                   <a href="mailto:shashankmuz3@gmail.com" className="hover:text-primary transition-colors">shashankmuz3@gmail.com</a>
+                </div>
+          </p>
+          
+          
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
           </div>
         </div>
-
-        {/* BOTTOM */}
-        <div className="border-t border-border mt-10 pt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} <strong>Matestay</strong> Private Limited
-          </p>
-          <p className="text-xs mt-1 text-muted-foreground">
-            Designed & Built by <span className="font-semibold text-primary">Matestay team </span>
-          </p>
+        
+        <div className="mt-4 text-center">
+           <p className="text-xs text-muted-foreground">
+             Designed & Built with ❤️ by <span className="font-medium text-primary">Shashank, Sujal & MateStay Team</span>
+           </p>
         </div>
 
       </div>

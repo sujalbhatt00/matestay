@@ -6,6 +6,8 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+
+// Existing Pages
 import Home from "./pages/Home";
 import FindRoommate from "./pages/FindRoommate";
 import ChatPage from "./pages/ChatPage";
@@ -26,11 +28,20 @@ import FloatingChatButton from "./components/FloatingChatButton";
 import EditPropertyPage from "./pages/EditPropertyPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
+// --- IMPORT NEW PAGES ---
+import AboutUs from "./pages/AboutUs";
+import ContactSupport from "./pages/ContactSupport";
+import Careers from "./pages/Careers";
+import Blog from "./pages/Blog";
+// --- END IMPORTS ---
+
+// Helper to force remount on route change
 function MainContent() {
   const location = useLocation();
   return (
     <main className="flex-grow" key={location.pathname}>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/find-roommates" element={<FindRoommate />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -39,73 +50,26 @@ function MainContent() {
         <Route path="/search" element={<LocationSearchPage />} />
         <Route path="/properties/all" element={<AllPropertiesPage />} />
         <Route path="/properties/search" element={<PropertiesSearchPage />} />
-
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        <Route 
-          path="/chat" 
-          element={
-            <ProtectedRoute>
-              <ChatPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/chat/:conversationId" 
-          element={
-            <ProtectedRoute>
-              <ChatPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/create-listing" 
-          element={
-            <ProtectedRoute>
-              <CreatePropertyPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/my-listings" 
-          element={
-            <ProtectedRoute>
-              <MyListingsPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/properties/edit/:id" 
-          element={
-            <ProtectedRoute>
-              <EditPropertyPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/premium" 
-          element={
-            <ProtectedRoute>
-              <PremiumPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } 
-        />
+        {/* --- NEW FOOTER ROUTES --- */}
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactSupport />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/blog" element={<Blog />} />
+        {/* --- END NEW FOOTER ROUTES --- */}
+
+        {/* Protected Routes */}
+        <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+        <Route path="/chat/:conversationId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/create-listing" element={<ProtectedRoute><CreatePropertyPage /></ProtectedRoute>} />
+        <Route path="/my-listings" element={<ProtectedRoute><MyListingsPage /></ProtectedRoute>} />
+        <Route path="/properties/edit/:id" element={<ProtectedRoute><EditPropertyPage /></ProtectedRoute>} />
+        <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       </Routes>
     </main>
   );
