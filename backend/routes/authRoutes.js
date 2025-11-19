@@ -1,4 +1,3 @@
-// ...existing code...
 import express from "express";
 import {
   register,
@@ -9,7 +8,6 @@ import {
   resetPassword,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
-
 import asyncHandler from "../middleware/asyncHandler.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { validateBody } from "../middleware/validate.js";
@@ -23,7 +21,7 @@ import {
 
 const router = express.Router();
 
-// Public endpoints — apply strict rate limiter + validation
+// Register (rate-limited, validated)
 router.post(
   "/register",
   authLimiter,
@@ -31,6 +29,7 @@ router.post(
   asyncHandler(register)
 );
 
+// Login (rate-limited, validated)
 router.post(
   "/login",
   authLimiter,
@@ -38,10 +37,10 @@ router.post(
   asyncHandler(login)
 );
 
-// Verify email (GET with token query) — still wrapped for safety
+// Verify email (GET with token query)
 router.get("/verify-email", asyncHandler(verifyEmail));
 
-// Resend verification — keep protect if your flow requires authenticated users, plus validation & limiter
+// Resend verification (rate-limited, validated, protected)
 router.post(
   "/resend-verification",
   authLimiter,
@@ -50,7 +49,7 @@ router.post(
   asyncHandler(resendVerification)
 );
 
-// Forgot / Reset password — rate limited + validated
+// Forgot password (rate-limited, validated)
 router.post(
   "/forgot-password",
   authLimiter,
@@ -58,6 +57,7 @@ router.post(
   asyncHandler(forgotPassword)
 );
 
+// Reset password (rate-limited, validated)
 router.post(
   "/reset-password/:token",
   authLimiter,

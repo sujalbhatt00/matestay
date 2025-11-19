@@ -22,7 +22,10 @@ import asyncHandler from "../middleware/asyncHandler.js";
 const router = express.Router();
 
 const idParamSchema = Joi.object({
-  userId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().message("Invalid user id"),
+  userId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({ "string.pattern.base": "Invalid user id" }),
 });
 
 // Public

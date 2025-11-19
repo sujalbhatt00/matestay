@@ -1,4 +1,3 @@
-// ...existing code...
 import express from "express";
 import Joi from "joi";
 import {
@@ -17,7 +16,10 @@ import asyncHandler from "../middleware/asyncHandler.js";
 const router = express.Router();
 
 const idParamSchema = Joi.object({
-  id: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().message("Invalid id format"),
+  id: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({ "string.pattern.base": "Invalid id" }),
 });
 
 // All routes require auth + admin
