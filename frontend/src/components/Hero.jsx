@@ -9,10 +9,13 @@ import axios from "@/api/axiosInstance";
 
 const Hero = () => { 
   const [location, setLocation] = useState("");
+  const [focused, setFocused] = useState(false);
+
   const [stats, setStats] = useState({
     totalListings: 0,
     totalUsers: 0,
   });
+  
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -33,20 +36,15 @@ const Hero = () => {
     fetchStats();
   }, []);
 
-  // ✅ UPDATED: Navigate to location search page (shows both properties and users)
   const handleSubmit = (e) => {
     e.preventDefault(); 
-    
-    if (!location.trim()) {
-      return; // Don't search if location is empty
-    }
-    
-    // Navigate to location search page with location parameter
+    if (!location.trim()) return;
     navigate(`/search?location=${encodeURIComponent(location)}`);
   };
 
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
+      {/* Background */}
       <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
@@ -54,8 +52,12 @@ const Hero = () => {
           className="w-full h-full object-cover opacity-10 dark:opacity-10"
         />
       </div>
+
+      {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
+
+          {/* HEADING */}
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground">
             Find Your Perfect Roommate
           </h1>
@@ -64,34 +66,57 @@ const Hero = () => {
             space. Safe, verified, and hassle-free.
           </p>
 
+          {/* Animated Modern Search Bar */}
           <form 
             onSubmit={handleSubmit}
-            className="bg-card rounded-2xl p-6 max-w-2xl mx-auto border border-border shadow-lg"
+            className="max-w-2xl mx-auto"
           >
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div
+              className={`
+                flex items-center gap-3 rounded-full bg-card border border-border shadow-md
+                transition-all duration-300 ease-out px-4 py-3
+
+                ${focused ? "shadow-xl scale-[1.03] border-primary/60" : "shadow-lg"}
+              `}
+            >
+              
+              {/* Icon */}
+              <Search 
+                className={`h-5 w-5 transition-all duration-300 
+                ${focused ? "text-primary opacity-100" : "text-muted-foreground opacity-70"}`}
+              />
+
+              {/* Location Combobox */}
               <div className="flex-1">
                 <LocationCombobox
                   value={location}
                   onChange={setLocation}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
                 />
               </div>
+
+              {/* Animated Button */}
               <Button
                 type="submit"
-                size="lg"
-                className="h-12 px-8 bg-[#5b5dda] text-white hover:bg-[#4a4ab5]"
+                className={`rounded-full px-6 h-10 font-medium transition-all duration-300
+                  bg-[#5b5dda] hover:bg-[#4a4ab5] text-white
+                  ${focused ? "scale-105 shadow-md" : "scale-100"}
+                `}
               >
-                <Search className="mr-2 h-5 w-5" />
                 Search
               </Button>
             </div>
           </form>
 
+          {/* STATS */}
           <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-            <span>🏠 {stats.totalListings > 0 ? `${stats.totalListings.toLocaleString()}+` : '0'} Listings</span>
-            <span>👥 {stats.totalUsers > 0 ? `${stats.totalUsers.toLocaleString()}+` : '0'} Users</span>
-            <span>✓ Verified Profiles</span>
-            <span>💬 Instant Messaging</span>
+            <span> {stats.totalListings > 0 ? `${stats.totalListings.toLocaleString()}+` : '0'} Listings</span>
+            <span> {stats.totalUsers > 0 ? `${stats.totalUsers.toLocaleString()}+` : '0'} Users</span>
+            <span> Verified Profiles</span>
+            <span> Instant Messaging</span>
           </div>
+
         </div>
       </div>
     </section>
