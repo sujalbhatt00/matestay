@@ -7,8 +7,23 @@ import ChangePasswordModal from './ChangePasswordModal';
 
 const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
+const lookingForLabels = {
+  room: "Looking for Room",
+  roommate: "Looking for Roommate",
+  both: "Looking for Both",
+};
+
 export default function ViewProfile({ user, onEdit }) {
   const [showChangePassword, setShowChangePassword] = useState(false); 
+
+  // Show loading or fallback if user is not loaded
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <span className="text-muted-foreground">Loading profile...</span>
+      </div>
+    );
+  }
 
   const {
     name,
@@ -49,7 +64,14 @@ export default function ViewProfile({ user, onEdit }) {
             className="w-32 h-32 rounded-full object-cover border-4 border-primary/20 ring-4 ring-primary/10"
           />
           <div className="text-center sm:text-left flex-grow">
-            <h1 className="text-3xl font-bold">{name || 'Your Name'}</h1>
+            <div className="flex flex-col sm:flex-row items-center gap-2 justify-center sm:justify-start">
+              <h1 className="text-3xl font-bold">{name || 'Your Name'}</h1>
+              {lookingFor && lookingForLabels[lookingFor] && (
+                <Badge variant="secondary" className="ml-2">
+                  {lookingForLabels[lookingFor]}
+                </Badge>
+              )}
+            </div>
             <p className="text-lg text-muted-foreground">{occupation || 'No occupation set'}</p>
             {location && (
               <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center sm:justify-start gap-1">
@@ -103,7 +125,8 @@ export default function ViewProfile({ user, onEdit }) {
             </p>
             <p className="flex items-center text-sm gap-2">
               <Search className="w-4 h-4 text-primary" />
-              <strong>Looking for:</strong> {lookingFor || 'Any'}
+              <strong>Looking for:</strong>{" "}
+              {lookingForLabels[lookingFor] || 'Any'}
             </p>
           </div>
         </div>

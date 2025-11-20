@@ -10,6 +10,9 @@ const LocationSearchPage = () => {
   const [searchParams] = useSearchParams();
   const location = searchParams.get('location');
   const type = searchParams.get('type') || 'roommate'; // default to roommate
+  const gender = searchParams.get('gender');
+  const budget = searchParams.get('budget');
+  const propertyType = searchParams.get('propertyType');
 
   const [properties, setProperties] = useState([]);
   const [users, setUsers] = useState([]);
@@ -24,12 +27,16 @@ const LocationSearchPage = () => {
       }
     }
     // eslint-disable-next-line
-  }, [location, type]);
+  }, [location, type, gender, budget, propertyType]);
 
   const fetchProperties = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/properties/search?location=${encodeURIComponent(location)}`);
+      const params = new URLSearchParams();
+      params.append("location", location);
+      if (budget) params.append("maxPrice", budget);
+      if (propertyType) params.append("propertyType", propertyType);
+      const response = await axios.get(`/properties/search?${params.toString()}`);
       setProperties(response.data);
     } catch (error) {
       setProperties([]);
@@ -41,7 +48,11 @@ const LocationSearchPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/user/search-public?location=${encodeURIComponent(location)}`);
+      const params = new URLSearchParams();
+      params.append("location", location);
+      if (gender && gender !== "Any") params.append("gender", gender);
+      if (budget) params.append("maxBudget", budget);
+      const response = await axios.get(`/user/search-public?${params.toString()}`);
       setUsers(response.data);
     } catch (error) {
       setUsers([]);

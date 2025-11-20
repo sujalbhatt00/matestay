@@ -12,6 +12,7 @@ import {
   Crown,
   Home,
   X,
+  BedDouble,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,21 @@ const Navbar = () => {
             <NavLink to="/find-roommates" className={navLinkClass}>
               <Users className="h-4 w-4" /> Find Roommates
             </NavLink>
+
+            {/* Find Rooms Button as a normal button that scrolls to Hero on homepage */}
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer"
+              }}
+              onClick={() => navigate("/?type=room&showFilters=1")}
+            >
+              <BedDouble className="h-4 w-4" /> Find Rooms
+            </button>
 
             <NavLink to="/chat" className={navLinkClass}>
               <div className="relative flex items-center gap-1">
@@ -154,7 +170,7 @@ const Navbar = () => {
                   {user.isAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin")}>
                       <ShieldCheck className="h-4 w-4 mr-2" /> Admin Panel
-                    </DropdownMenuItem> // <-- THIS WAS THE TYPO
+                    </DropdownMenuItem>
                   )}
 
                   <DropdownMenuSeparator />
@@ -217,7 +233,20 @@ const Navbar = () => {
             <span className="text-[11px]">Roommates</span>
           </button>
 
-          {/* POST (FINAL CLEAN DESIGN — SAME SIZE AS OTHERS) */}
+          {/* Rooms */}
+          <button
+            onClick={() => handleNavClick("/?type=room&showFilters=1")}
+            className={`flex flex-col items-center gap-1 ${
+              window.location.search.includes("type=room")
+                ? "text-primary"
+                : "text-muted-foreground"
+            }`}
+          >
+            <BedDouble className="h-5 w-5" />
+            <span className="text-[11px]">Rooms</span>
+          </button>
+
+          {/* POST */}
           <button
             onClick={() => (user ? handleNavClick("/create-listing") : setShowAuth(true))}
             className="flex flex-col items-center gap-1"
