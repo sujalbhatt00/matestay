@@ -1,4 +1,6 @@
 # Matestay
+live demo-https://matestay-fx9k.vercel.app/
+
 
 Matestay is a production-ready full‑stack web application to find roommates and rental properties.  
 This repository contains a React + Vite frontend and a Node.js + Express + MongoDB backend with features for listings, real‑time chat (Socket.IO), payments (Razorpay), admin tools, and email flows powered by SendGrid.
