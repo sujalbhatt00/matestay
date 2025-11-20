@@ -11,6 +11,9 @@ const Hero = () => {
   const [location, setLocation] = useState("");
   const [focused, setFocused] = useState(false);
 
+  // NEW → toggle between rooms and roommates
+  const [type, setType] = useState("roommate");
+
   const [stats, setStats] = useState({
     totalListings: 0,
     totalUsers: 0,
@@ -25,25 +28,24 @@ const Hero = () => {
         const response = await axios.get('/properties/stats');
         setStats(response.data);
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
-        setStats({
-          totalListings: 0,
-          totalUsers: 0,
-        });
+        setStats({ totalListings: 0, totalUsers: 0 });
       }
     };
-
     fetchStats();
   }, []);
 
   const handleSubmit = (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
     if (!location.trim()) return;
-    navigate(`/search?location=${encodeURIComponent(location)}`);
+
+    navigate(
+      `/search?location=${encodeURIComponent(location)}&type=${type}`
+    );
   };
 
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
+      
       {/* Background */}
       <div className="absolute inset-0 z-0">
         <img
@@ -53,38 +55,44 @@ const Hero = () => {
         />
       </div>
 
-      {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
 
-          {/* HEADING */}
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground">
-            Find Your Perfect Roommate
+            Find Your Perfect Roommate And Room
           </h1>
+
           <p className="text-xl text-muted-foreground mb-12">
-            Connect with compatible roommates and discover your ideal living
-            space. Safe, verified, and hassle-free.
+            Verified, safe and instant matches.
           </p>
 
-          {/* Animated Modern Search Bar */}
+          {/* ==============================
+                 UPDATED SEARCH BAR
+             ============================== */}
           <form 
             onSubmit={handleSubmit}
-            className="max-w-2xl mx-auto"
+            className="max-w-3xl mx-auto"
           >
             <div
               className={`
                 flex items-center gap-3 rounded-full bg-card border border-border shadow-md
                 transition-all duration-300 ease-out px-4 py-3
-
                 ${focused ? "shadow-xl scale-[1.03] border-primary/60" : "shadow-lg"}
               `}
             >
-              
-              {/* Icon */}
-              <Search 
-                className={`h-5 w-5 transition-all duration-300 
-                ${focused ? "text-primary opacity-100" : "text-muted-foreground opacity-70"}`}
-              />
+
+              {/* TYPE TOGGLE */}
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="bg-transparent text-foreground text-sm font-medium px-2 outline-none"
+              >
+                <option value="roommate">Roommates</option>
+                <option value="room">Rooms</option>
+              </select>
+
+              {/* Divider */}
+              <div className="w-[1px] h-6 bg-border"></div>
 
               {/* Location Combobox */}
               <div className="flex-1">
@@ -96,25 +104,23 @@ const Hero = () => {
                 />
               </div>
 
-              {/* Animated Button */}
+              {/* Search Button */}
               <Button
                 type="submit"
-                className={`rounded-full px-6 h-10 font-medium transition-all duration-300
-                  bg-[#5b5dda] hover:bg-[#4a4ab5] text-white
-                  ${focused ? "scale-105 shadow-md" : "scale-100"}
-                `}
+                className={`rounded-full px-6 h-10 bg-[#5b5dda] hover:bg-[#4a4ab5] text-white`}
               >
                 Search
               </Button>
+
             </div>
           </form>
 
           {/* STATS */}
           <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-            <span> {stats.totalListings > 0 ? `${stats.totalListings.toLocaleString()}+` : '0'} Listings</span>
-            <span> {stats.totalUsers > 0 ? `${stats.totalUsers.toLocaleString()}+` : '0'} Users</span>
-            <span> Verified Profiles</span>
-            <span> Instant Messaging</span>
+            <span>{stats.totalListings}+ Listings</span>
+            <span>{stats.totalUsers}+ Users</span>
+            <span>Verified Profiles</span>
+            <span>Instant Messaging</span>
           </div>
 
         </div>

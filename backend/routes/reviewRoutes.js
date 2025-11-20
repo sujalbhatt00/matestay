@@ -7,7 +7,7 @@ import {
   deleteReview,
 } from "../controllers/reviewController.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { authLimiter } from "../middleware/rateLimiter.js";
+import { generalLimiter } from "../middleware/rateLimiter.js"; // Use a more relaxed limiter
 import { validateBody, validateParams } from "../middleware/validate.js";
 import { createReviewSchema, updateReviewSchema } from "../validation/schema.js";
 import asyncHandler from "../middleware/asyncHandler.js";
@@ -28,27 +28,27 @@ const reviewIdParamSchema = Joi.object({
     .messages({ "string.pattern.base": "Invalid review id" }),
 });
 
-// Create review (protected, rate-limited, validated)
-router.post("/", protect, authLimiter, validateBody(createReviewSchema), asyncHandler(createReview));
+// Create review (protected, general rate-limited, validated)
+router.post("/", protect, generalLimiter, validateBody(createReviewSchema), asyncHandler(createReview));
 
 // Get reviews for a user (public but validate param)
 router.get("/user/:userId", validateParams(userIdParamSchema), asyncHandler(getUserReviews));
 
-// Update review (protected, rate-limited, validated)
+// Update review (protected, general rate-limited, validated)
 router.put(
   "/:reviewId",
   protect,
-  authLimiter,
+  generalLimiter,
   validateParams(reviewIdParamSchema),
   validateBody(updateReviewSchema),
   asyncHandler(updateReview)
 );
 
-// Delete review (protected, rate-limited)
+// Delete review (protected, general rate-limited)
 router.delete(
   "/:reviewId",
   protect,
-  authLimiter,
+  generalLimiter,
   validateParams(reviewIdParamSchema),
   asyncHandler(deleteReview)
 );

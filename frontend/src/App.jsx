@@ -17,7 +17,7 @@ import CreatePropertyPage from "./pages/CreatePropertyPage";
 import MyListingsPage from "./pages/MyListingsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
 import PropertiesSearchPage from "./pages/PropertiesSearchPage";
-import LocationSearchPage from "./pages/LocationSearchPage";
+import LocationSearchPage from "./components/LocationSearchPage";
 import AllPropertiesPage from "./pages/AllPropertiesPage";
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "./pages/AdminDashboard";

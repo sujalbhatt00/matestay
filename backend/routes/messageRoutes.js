@@ -8,7 +8,7 @@ import {
   clearChat,
 } from "../controllers/messageController.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { authLimiter } from "../middleware/rateLimiter.js";
+import { generalLimiter } from "../middleware/rateLimiter.js"; // Use a more relaxed limiter
 import { validateBody, validateParams } from "../middleware/validate.js";
 import { addMessageSchema } from "../validation/schema.js";
 import asyncHandler from "../middleware/asyncHandler.js";
@@ -22,11 +22,11 @@ const convoIdParam = Joi.object({
     .messages({ "string.pattern.base": "Invalid conversation id" }),
 });
 
-// Create message (protected, rate-limited, validated)
+// Create message (protected, general rate-limited, validated)
 router.post(
   "/",
   protect,
-  authLimiter,
+  generalLimiter,
   validateBody(addMessageSchema),
   asyncHandler(addMessage)
 );
@@ -35,13 +35,13 @@ router.post(
 router.get(
   "/unread/count",
   protect,
-  authLimiter,
+  generalLimiter,
   asyncHandler(getUnreadCount)
 );
 router.get(
   "/unread/by-conversation",
   protect,
-  authLimiter,
+  generalLimiter,
   asyncHandler(getUnreadMessagesByConversation)
 );
 
@@ -49,7 +49,7 @@ router.get(
 router.delete(
   "/:conversationId/clear",
   protect,
-  authLimiter,
+  generalLimiter,
   validateParams(convoIdParam),
   asyncHandler(clearChat)
 );
@@ -58,7 +58,7 @@ router.delete(
 router.get(
   "/:conversationId",
   protect,
-  authLimiter,
+  generalLimiter,
   validateParams(convoIdParam),
   asyncHandler(getMessages)
 );

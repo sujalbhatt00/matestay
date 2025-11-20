@@ -82,20 +82,25 @@ export const updatePropertySchema = Joi.object({
 
 // --- Message Schema ---
 export const addMessageSchema = Joi.object({
-  conversationId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().messages({
-    "string.pattern.base": "Invalid conversation id",
-  }),
+  conversationId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({ "string.pattern.base": "Invalid conversation id" }),
   text: Joi.string().min(1).max(2000).required(),
 });
 
 // --- Review Schemas ---
 export const createReviewSchema = Joi.object({
-  revieweeId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().messages({
-    "string.pattern.base": "Invalid user id",
-  }),
+  revieweeId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({ "string.pattern.base": "Invalid user id" }),
   rating: Joi.number().integer().min(1).max(5).required(),
   comment: Joi.string().max(500).required(),
-  propertyId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).optional().allow(null, ""),
+  propertyId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .optional()
+    .allow(null, ""),
 });
 
 export const updateReviewSchema = Joi.object({
@@ -106,4 +111,12 @@ export const updateReviewSchema = Joi.object({
 // --- Order Schema ---
 export const createOrderSchema = Joi.object({
   plan: Joi.string().valid("monthly", "yearly").required(),
+});
+
+// --- Conversation Schema ---
+export const newConversationSchema = Joi.object({
+  receiverId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({ "string.pattern.base": "Invalid receiver id" }),
 });

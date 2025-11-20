@@ -6,9 +6,7 @@ export const newConversation = async (req, res) => {
   const senderId = req.user.id;
   const { receiverId } = req.body;
 
-  if (!receiverId) {
-    return res.status(400).json({ message: "Receiver ID is required." });
-  }
+  // Joi validation is handled by middleware
 
   if (senderId === receiverId) {
     return res.status(400).json({ message: "You cannot create a conversation with yourself." });
@@ -18,11 +16,13 @@ export const newConversation = async (req, res) => {
     let convo = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },
     })
-    .populate("members", "name profilePic")
-    .lean();
+      .populate("members", "name profilePic")
+      .lean();
 
     if (convo) {
-      const lastMessage = await Message.findOne({ conversationId: convo._id }).sort({ createdAt: -1 }).lean();
+      const lastMessage = await Message.findOne({ conversationId: convo._id })
+        .sort({ createdAt: -1 })
+        .lean();
       convo.lastMessage = lastMessage ? lastMessage.text : "No messages yet";
       convo.lastMessageTimestamp = lastMessage ? lastMessage.createdAt : convo.updatedAt;
       return res.status(200).json(convo);
@@ -36,7 +36,7 @@ export const newConversation = async (req, res) => {
     let populatedConvo = await Conversation.findById(savedConvo._id)
       .populate("members", "name profilePic")
       .lean();
-      
+
     populatedConvo.lastMessage = "No messages yet";
     populatedConvo.lastMessageTimestamp = populatedConvo.updatedAt;
 
@@ -52,16 +52,16 @@ export const getConversations = async (req, res) => {
     const conversations = await Conversation.find({
       members: { $in: [req.user.id] },
     })
-    .populate("members", "name profilePic")
-    .sort({ updatedAt: -1 })
-    .lean(); 
+      .populate("members", "name profilePic")
+      .sort({ updatedAt: -1 })
+      .lean();
 
     const conversationsWithLastMessage = await Promise.all(
       conversations.map(async (convo) => {
         const lastMessage = await Message.findOne({ conversationId: convo._id })
           .sort({ createdAt: -1 })
           .lean();
-        
+
         return {
           ...convo,
           lastMessage: lastMessage ? lastMessage.text : "No messages yet",
@@ -102,7 +102,7 @@ export const deleteConversation = async (req, res) => {
     res.status(200).json({ message: "Conversation deleted successfully." });
 
   } catch (error) {
-     console.error("Error deleting conversation:", error);
-     res.status(500).json({ message: "Server error" });
+    console.error("Error deleting conversation:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

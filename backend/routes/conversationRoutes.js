@@ -1,16 +1,14 @@
 import express from "express";
 import Joi from "joi";
 import {
-  addMessage,
-  getMessages,
-  getUnreadCount,
-  getUnreadMessagesByConversation,
-  clearChat,
-} from "../controllers/messageController.js";
+  newConversation,
+  getConversations,
+  deleteConversation,
+} from "../controllers/conversationController.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { authLimiter } from "../middleware/rateLimiter.js";
+import { generalLimiter } from "../middleware/rateLimiter.js"; // Use a more relaxed limiter
 import { validateBody, validateParams } from "../middleware/validate.js";
-import { addMessageSchema } from "../validation/schema.js";
+import { newConversationSchema } from "../validation/schema.js";
 import asyncHandler from "../middleware/asyncHandler.js";
 
 const router = express.Router();
@@ -22,45 +20,25 @@ const convoIdParam = Joi.object({
     .messages({ "string.pattern.base": "Invalid conversation id" }),
 });
 
-// Create message (protected, rate-limited, validated)
+// Create new conversation (protected, general rate-limited, validated)
 router.post(
   "/",
   protect,
-  authLimiter,
-  validateBody(addMessageSchema),
-  asyncHandler(addMessage)
+  generalLimiter,
+  validateBody(newConversationSchema),
+  asyncHandler(newConversation)
 );
 
-// Unread routes (specific routes before dynamic params)
-router.get(
-  "/unread/count",
-  protect,
-  authLimiter,
-  asyncHandler(getUnreadCount)
-);
-router.get(
-  "/unread/by-conversation",
-  protect,
-  authLimiter,
-  asyncHandler(getUnreadMessagesByConversation)
-);
+// List conversations (protected, general rate-limited)
+router.get("/", protect, generalLimiter, asyncHandler(getConversations));
 
-// Clear chat (validate param)
+// Delete conversation (protected, general rate-limited, validate param)
 router.delete(
-  "/:conversationId/clear",
-  protect,
-  authLimiter,
-  validateParams(convoIdParam),
-  asyncHandler(clearChat)
-);
-
-// Get messages for a conversation (validate param)
-router.get(
   "/:conversationId",
   protect,
-  authLimiter,
+  generalLimiter,
   validateParams(convoIdParam),
-  asyncHandler(getMessages)
+  asyncHandler(deleteConversation)
 );
 
 export default router;
