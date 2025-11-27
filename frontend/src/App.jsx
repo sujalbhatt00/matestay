@@ -4,10 +4,14 @@ import { AuthProvider } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "sonner";
+
+// Layout
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import FloatingChatButton from "./components/FloatingChatButton";
+import ScrollToTop from "./components/ScrollToTop"; // ⭐ NEW
 
-// Existing Pages
+// Pages
 import Home from "./pages/Home";
 import FindRoommate from "./pages/FindRoommate";
 import ChatPage from "./pages/ChatPage";
@@ -22,28 +26,38 @@ import AllPropertiesPage from "./pages/AllPropertiesPage";
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "./pages/AdminDashboard";
 import PremiumPage from "./pages/PremiumPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
-import FloatingChatButton from "./components/FloatingChatButton";
 import EditPropertyPage from "./pages/EditPropertyPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
-// --- IMPORT NEW PAGES ---
+// Footer pages
 import AboutUs from "./pages/AboutUs";
 import ContactSupport from "./pages/ContactSupport";
 import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
-// --- END IMPORTS ---
 
-// Helper to force remount on route change
+// New: Find Rooms Page
+import FindRooms from "./pages/FindRooms";
+
+// Route protection
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+
+
+// ---------------- MAIN CONTENT WRAPPER ----------------
 function MainContent() {
   const location = useLocation();
+
   return (
     <main className="flex-grow" key={location.pathname}>
       <Routes>
+
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/find-roommates" element={<FindRoommate />} />
+
+        {/*  Find Rooms Route */}
+        <Route path="/find-rooms" element={<FindRooms />} />
+
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/profile/:userId" element={<PublicProfilePage />} />
         <Route path="/properties/:id" element={<PropertyDetailPage />} />
@@ -52,41 +66,49 @@ function MainContent() {
         <Route path="/properties/search" element={<PropertiesSearchPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* --- NEW FOOTER ROUTES --- */}
+        {/* Footer Routes */}
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<ContactSupport />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/blog" element={<Blog />} />
-        {/* --- END NEW FOOTER ROUTES --- */}
 
         {/* Protected Routes */}
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         <Route path="/chat/:conversationId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/create-listing" element={<ProtectedRoute><CreatePropertyPage /></ProtectedRoute>} />
         <Route path="/my-listings" element={<ProtectedRoute><MyListingsPage /></ProtectedRoute>} />
         <Route path="/properties/edit/:id" element={<ProtectedRoute><EditPropertyPage /></ProtectedRoute>} />
         <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
-        
-        {/* Admin Routes */}
+
+        {/* Admin Route */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+
       </Routes>
     </main>
   );
 }
 
+
+// ---------------- APP WRAPPER ----------------
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <AuthProvider>
         <ChatProvider>
           <Router>
+
+            {/*  Auto Scroll on Every Page Navigation */}
+            <ScrollToTop />
+
             <div className="flex flex-col min-h-screen">
               <Navbar />
               <MainContent />
               <Footer />
               <FloatingChatButton />
             </div>
+
             <Toaster position="top-right" richColors />
           </Router>
         </ChatProvider>

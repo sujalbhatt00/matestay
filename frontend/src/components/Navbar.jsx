@@ -42,7 +42,6 @@ const Navbar = () => {
   const [showAuth, setShowAuth] = useState(false);
 
   const navigate = useNavigate();
-
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
   const displayUnreadCount = unreadCount || 0;
 
@@ -59,18 +58,22 @@ const Navbar = () => {
   return (
     <>
       {/* ===================== DESKTOP NAV ===================== */}
-      <nav className="
+      <nav
+        className="
         hidden md:block 
         fixed top-5 left-1/2 -translate-x-1/2
         z-50 w-[88%]
         bg-background/40 backdrop-blur-xl
         border border-white/10 shadow-xl
         rounded-2xl px-6 py-3
-      ">
+      "
+      >
         <div className="flex items-center justify-between h-9">
-
           {/* Logo */}
-          <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
+          <div
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 cursor-pointer"
+          >
             <img src="/Logo.png" width={50} alt="Matestay" />
             <span className="text-xl font-bold tracking-tight">Matestay</span>
           </div>
@@ -81,27 +84,24 @@ const Navbar = () => {
               <Users className="h-4 w-4" /> Find Roommates
             </NavLink>
 
-            {/* Find Rooms Button as a normal button that scrolls to Hero on homepage */}
+            {/* FIND ROOMS UPDATED BUTTON */}
             <button
               type="button"
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: "pointer"
-              }}
-              onClick={() => navigate("/?type=room&showFilters=1")}
+              style={{ background: "none", border: "none", padding: 0 }}
+              onClick={() =>
+                navigate("/find-rooms?type=room&showFilters=1")
+              }
             >
               <BedDouble className="h-4 w-4" /> Find Rooms
             </button>
 
+            {/* Chat */}
             <NavLink to="/chat" className={navLinkClass}>
               <div className="relative flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" /> Messages
                 {displayUnreadCount > 0 && (
-                  <span className="absolute -top-2 -right-4 h-5 w-5 flex items-center
-                    justify-center bg-red-500 text-white text-[10px] rounded-full font-bold">
+                  <span className="absolute -top-2 -right-4 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full font-bold">
                     {displayUnreadCount > 9 ? "9+" : displayUnreadCount}
                   </span>
                 )}
@@ -117,13 +117,21 @@ const Navbar = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-
             {/* Theme Toggle */}
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleTheme}>
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </Button>
 
-            {/* CLEAN POST BUTTON (Desktop) */}
+            {/* Post Button */}
             {user && (
               <Button
                 onClick={() => navigate("/create-listing")}
@@ -139,8 +147,12 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="p-0 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.profilePic || defaultAvatar} />
-                      <AvatarFallback>{user.name?.[0]}</AvatarFallback>
+                      <AvatarImage
+                        src={user.profilePic || defaultAvatar}
+                      />
+                      <AvatarFallback>
+                        {user.name?.[0]}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -148,7 +160,9 @@ const Navbar = () => {
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel>
                     <p className="font-semibold">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
 
                     {user.isPremium && (
                       <span className="bg-yellow-500/20 text-yellow-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 mt-1">
@@ -163,25 +177,33 @@ const Navbar = () => {
                     <UserIcon className="h-4 w-4 mr-2" /> Profile
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem onClick={() => navigate("/my-listings")}>
+                  <DropdownMenuItem
+                    onClick={() => navigate("/my-listings")}
+                  >
                     <LayoutDashboard className="h-4 w-4 mr-2" /> My Listings
                   </DropdownMenuItem>
 
                   {user.isAdmin && (
-                    <DropdownMenuItem onClick={() => navigate("/admin")}>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/admin")}
+                    >
                       <ShieldCheck className="h-4 w-4 mr-2" /> Admin Panel
                     </DropdownMenuItem>
                   )}
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={logout} className="text-red-500">
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="text-red-500"
+                  >
                     <LogOut className="h-4 w-4 mr-2" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button className="bg-primary text-primary-foreground px-5 rounded-full shadow"
+              <Button
+                className="bg-primary text-primary-foreground px-5 rounded-full shadow"
                 onClick={() => setShowAuth(true)}
               >
                 Sign In
@@ -194,13 +216,20 @@ const Navbar = () => {
       {/* ===================== MOBILE TOP NAV ===================== */}
       <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b shadow-sm">
         <div className="flex items-center justify-between h-14 px-4">
-          <div onClick={() => handleNavClick("/")} className="flex items-center gap-2 cursor-pointer">
+          <div
+            onClick={() => handleNavClick("/")}
+            className="flex items-center gap-2 cursor-pointer"
+          >
             <img src="/Logo.png" width={36} alt="logo" />
             <span className="font-semibold text-lg">Matestay</span>
           </div>
 
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </nav>
@@ -213,7 +242,9 @@ const Navbar = () => {
           <button
             onClick={() => handleNavClick("/")}
             className={`flex flex-col items-center gap-1 ${
-              window.location.pathname === "/" ? "text-primary" : "text-muted-foreground"
+              window.location.pathname === "/"
+                ? "text-primary"
+                : "text-muted-foreground"
             }`}
           >
             <Home className="h-5 w-5" />
@@ -233,11 +264,13 @@ const Navbar = () => {
             <span className="text-[11px]">Roommates</span>
           </button>
 
-          {/* Rooms */}
+          {/* ROOMS UPDATED BUTTON */}
           <button
-            onClick={() => handleNavClick("/?type=room&showFilters=1")}
+            onClick={() =>
+              handleNavClick("/find-rooms?type=room&showFilters=1")
+            }
             className={`flex flex-col items-center gap-1 ${
-              window.location.search.includes("type=room")
+              window.location.pathname.startsWith("/find-rooms")
                 ? "text-primary"
                 : "text-muted-foreground"
             }`}
@@ -246,9 +279,11 @@ const Navbar = () => {
             <span className="text-[11px]">Rooms</span>
           </button>
 
-          {/* POST */}
+          {/* Post */}
           <button
-            onClick={() => (user ? handleNavClick("/create-listing") : setShowAuth(true))}
+            onClick={() =>
+              user ? handleNavClick("/create-listing") : setShowAuth(true)
+            }
             className="flex flex-col items-center gap-1"
           >
             <Plus className="h-5 w-5" />
@@ -277,19 +312,23 @@ const Navbar = () => {
 
           {/* Profile */}
           <button
-            onClick={() => (user ? setIsMenuOpen(true) : setShowAuth(true))}
+            onClick={() =>
+              user ? setIsMenuOpen(true) : setShowAuth(true)
+            }
             className="flex flex-col items-center gap-1"
           >
             <Avatar className="h-7 w-7">
               <AvatarImage src={user?.profilePic || defaultAvatar} />
-              <AvatarFallback className="text-xs">{user?.name?.[0]}</AvatarFallback>
+              <AvatarFallback className="text-xs">
+                {user?.name?.[0]}
+              </AvatarFallback>
             </Avatar>
             <span className="text-[11px]">Profile</span>
           </button>
         </div>
       </nav>
 
-      {/* ===================== MOBILE PROFILE MENU ===================== */}
+      {/* MOBILE PROFILE MENU */}
       {isMenuOpen && user && (
         <div className="md:hidden fixed inset-0 z-50 bg-background/95 backdrop-blur-xl">
           <div className="flex justify-between items-center px-4 py-4 border-b">
@@ -303,7 +342,9 @@ const Navbar = () => {
             <div className="flex items-center gap-4 bg-secondary/30 rounded-xl p-4 border">
               <Avatar className="h-16 w-16">
                 <AvatarImage src={user.profilePic || defaultAvatar} />
-                <AvatarFallback className="text-2xl">{user.name?.[0]}</AvatarFallback>
+                <AvatarFallback className="text-2xl">
+                  {user.name?.[0]}
+                </AvatarFallback>
               </Avatar>
 
               <div className="flex-1">
@@ -327,11 +368,11 @@ const Navbar = () => {
                 <LayoutDashboard className="h-5 w-5 mr-3" /> My Listings
               </Button>
 
-              {!user.isPremium && (
+              {!user.isPremium &&
                 <Button variant="ghost" className="justify-start text-yellow-600" onClick={() => handleNavClick("/premium")}>
                   <Crown className="h-5 w-5 mr-3" /> Upgrade to Premium
                 </Button>
-              )}
+              }
 
               {user.isAdmin && (
                 <Button variant="ghost" className="justify-start" onClick={() => handleNavClick("/admin")}>
