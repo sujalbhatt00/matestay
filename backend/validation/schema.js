@@ -29,35 +29,44 @@ export const updateProfileSchema = Joi.object({
   name: Joi.string().min(2).max(100).optional(),
   phone: Joi.string().allow("").optional(),
   age: Joi.number().integer().min(13).optional(),
-  gender: Joi.string().valid(
-    "Male",
-    "Female",
-    "Non-binary",
-    "Transgender",
-    "Prefer not to say",
-    "Other"
-  ).optional(),
+  gender: Joi.string()
+    .valid(
+      "Male",
+      "Female",
+      "Non-binary",
+      "Transgender",
+      "Prefer not to say",
+      "Other"
+    )
+    .optional(),
   location: Joi.string().optional(),
   occupation: Joi.string().optional(),
   budget: Joi.number().optional(),
   bio: Joi.string().max(200).allow("").optional(),
   profilePic: Joi.string().uri().optional(),
   lifestyle: Joi.array().items(Joi.string()).optional(),
-  lookingFor: Joi.string().valid(
-    "Male",
-    "Female",
-    "Non-binary",
-    "Transgender",
-    "Any",
-    "Other"
-  ).optional(),
+  lookingFor: Joi.string()
+    .valid(
+      "Male",
+      "Female",
+      "Non-binary",
+      "Transgender",
+      "Any",
+      "Other"
+    )
+    .optional(),
 });
 
 // --- Property Schemas ---
 export const createPropertySchema = Joi.object({
   title: Joi.string().min(3).max(100).required(),
   description: Joi.string().min(10).max(1000).required(),
-  propertyType: Joi.string().valid("Apartment", "House", "PG", "Hostel", "Other").required(),
+
+  // 🔥 Updated to match frontend
+  propertyType: Joi.string()
+    .valid("Apartment", "House", "Room", "Studio", "PG", "Hostel", "Other")
+    .required(),
+
   location: Joi.string().required(),
   rent: Joi.number().min(0).required(),
   bedrooms: Joi.number().integer().min(1).max(10).required(),
@@ -70,7 +79,12 @@ export const createPropertySchema = Joi.object({
 export const updatePropertySchema = Joi.object({
   title: Joi.string().min(3).max(100).optional(),
   description: Joi.string().min(10).max(1000).optional(),
-  propertyType: Joi.string().valid("Apartment", "House", "PG", "Hostel", "Other").optional(),
+
+  // 🔥 Updated to match frontend
+  propertyType: Joi.string()
+    .valid("Apartment", "House", "Room", "Studio", "PG", "Hostel", "Other")
+    .optional(),
+
   location: Joi.string().optional(),
   rent: Joi.number().min(0).optional(),
   bedrooms: Joi.number().integer().min(1).max(10).optional(),

@@ -1,5 +1,3 @@
-// frontend/src/components/ui/LocationCombobox.jsx
-
 "use client"
 
 import * as React from "react"
@@ -20,16 +18,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "./popover"
-import { locations } from "@/lib/indianLocations" // Import our location list
+import { locations } from "@/lib/indianLocations"
 
 export function LocationCombobox({ value, onChange }) {
   const [open, setOpen] = React.useState(false)
 
-  // This finds the full "label" (e.g., "Dehradun, Uttarakhand") 
-  // from the saved "value" (which might just be "Dehradun, Uttarakhand").
+  // Display correct label from value
   const displayLabel = locations.find(
     (location) => location.value.toLowerCase() === value?.toLowerCase()
   )?.label || "Select location..."
+
+  const handleSelect = (selectedValue) => {
+    // Do not clear the value when reselecting the same location
+    onChange(selectedValue)
+    setOpen(false)
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -44,23 +47,28 @@ export function LocationCombobox({ value, onChange }) {
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput placeholder="Search location..." />
           <CommandList>
             <CommandEmpty>No location found.</CommandEmpty>
             <CommandGroup>
+
+              {/* Any Location Option */}
+              <CommandItem
+                value=""
+                onSelect={() => handleSelect("")}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === "" ? "opacity-100" : "opacity-0")} />
+                Any Location
+              </CommandItem>
+
               {locations.map((location) => (
                 <CommandItem
                   key={location.value}
                   value={location.value}
-                  onSelect={(currentValue) => {
-                    // When a user selects an item:
-                    // 1. Set the form value (or clear it if they re-select the same one)
-                    onChange(currentValue === value ? "" : currentValue)
-                    // 2. Close the popover
-                    setOpen(false)
-                  }}
+                  onSelect={() => handleSelect(location.value)}
                 >
                   <Check
                     className={cn(

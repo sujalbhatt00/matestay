@@ -15,7 +15,7 @@ export default function FindRooms() {
   const [location, setLocation] = useState(params.get("location") || "");
   const [budget, setBudget] = useState(params.get("budget") || "");
   const [propertyType, setPropertyType] = useState(params.get("propertyType") || "");
-  const [expandedFilters, setExpandedFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +25,6 @@ export default function FindRooms() {
 
     try {
       const q = new URLSearchParams();
-
       if (location) q.append("location", location);
       if (budget) q.append("budget", budget);
       if (propertyType) q.append("propertyType", propertyType);
@@ -46,7 +45,6 @@ export default function FindRooms() {
 
   useEffect(() => {
     const q = new URLSearchParams();
-
     if (location) q.append("location", location);
     if (budget) q.append("budget", budget);
     if (propertyType) q.append("propertyType", propertyType);
@@ -62,78 +60,75 @@ export default function FindRooms() {
   };
 
   return (
-    <div className="pt-28 pb-24 container mx-auto px-4">
+    <div className="pt-28 pb-20 container mx-auto px-3 sm:px-4">
 
       {/* PAGE TITLE */}
-      <div className="text-center mb-12 animate-fadeUp">
-        <h1 className="text-5xl font-bold tracking-tight mb-4">Find Rooms</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Filter through listed rooms and find the perfect accommodation that suits your needs.
+      <div className="text-center mb-8 animate-fadeUp">
+        <h1 className="text-3xl sm:text-4xl font-bold">Find Rooms</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-2">
+          Search rooms based on your preferred location and budget.
         </p>
       </div>
 
-      {/* FILTER BOX */}
+      {/* COMPACT FILTERS */}
       <div className="
-        bg-card border border-border/60 
-        p-6 md:p-8 rounded-2xl shadow-lg 
-        max-w-4xl mx-auto mb-14
-        animate-fadeUp delay-200
+        bg-card border border-border/40 px-4 py-4 
+        rounded-xl shadow-sm max-w-3xl mx-auto 
+        animate-fadeUp
       ">
+        <div className="flex items-center gap-3">
 
-        {/* Main filter row */}
-        <div className="flex flex-col md:flex-row items-center gap-4">
-
-          <div className="flex-1 w-full">
+          {/* Location */}
+          <div className="flex-1">
             <LocationCombobox value={location} onChange={setLocation} />
           </div>
 
-          <Button
-            className="h-11 rounded-xl px-7 font-semibold shadow-primary/20 hover:shadow-md transition-all"
-          >
+          <Button className="h-10 px-4 rounded-lg shadow-sm text-sm">
             <Search className="h-4 w-4 mr-2" />
             Apply
           </Button>
+
+          <Button 
+            variant="outline"
+            className="h-10 px-3 rounded-lg text-sm flex gap-2"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+          </Button>
         </div>
 
-        {/* Expand Filters */}
-        <button
-          type="button"
-          onClick={() => setExpandedFilters((v) => !v)}
-          className="flex items-center gap-2 text-primary text-sm font-medium mt-4 mx-auto hover:underline"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          More Filters
-        </button>
-
         {/* Extra Filters */}
-        {expandedFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6 animate-fadeDown">
+        {showFilters && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 animate-fadeDown">
 
-            {/* Budget */}
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Max Budget (₹)</label>
+              <label className="text-[11px] font-semibold text-muted-foreground">
+                Max Budget (₹)
+              </label>
               <input
                 type="number"
                 min={0}
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 className="
-                  mt-1 px-3 py-2 rounded-xl border bg-background 
-                  focus:ring-2 ring-primary/50 transition-all w-full
+                  mt-1 px-2 py-2 rounded-lg border text-sm bg-background 
+                  w-full focus:ring-2 ring-primary/40
                 "
-                placeholder="e.g. 10000"
+                placeholder="10000"
               />
             </div>
 
-            {/* Property Type */}
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Property Type</label>
+              <label className="text-[11px] font-semibold text-muted-foreground">
+                Property Type
+              </label>
               <select
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
                 className="
-                  mt-1 px-3 py-2 rounded-xl border bg-background 
-                  focus:ring-2 ring-primary/50 transition-all w-full
+                  mt-1 px-2 py-2 rounded-lg border text-sm bg-background 
+                  w-full focus:ring-2 ring-primary/40
                 "
               >
                 <option value="">Any</option>
@@ -148,14 +143,13 @@ export default function FindRooms() {
           </div>
         )}
 
-        {/* CLEAR BUTTON */}
-        <div className="flex justify-end mt-5">
+        <div className="flex justify-end mt-3">
           <button
             onClick={clearFilters}
             className="
-              px-5 py-2 rounded-xl border bg-muted/40 
+              px-4 py-2 text-sm rounded-lg border bg-muted/40 
               text-muted-foreground hover:bg-primary hover:text-white 
-              transition-all shadow-sm
+              transition
             "
           >
             Clear
@@ -163,46 +157,50 @@ export default function FindRooms() {
         </div>
       </div>
 
-      {/* ROOM RESULTS */}
+      {/* ROOM LIST */}
       {loading ? (
-        <div className="text-center py-24 animate-fadeUp">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto" />
-          <p className="mt-3 text-muted-foreground">Fetching rooms...</p>
+        <div className="text-center py-20 animate-fadeUp">
+          <Loader2 className="h-10 w-10 animate-spin mx-auto" />
+          <p className="mt-2 text-muted-foreground text-sm">Loading rooms...</p>
         </div>
       ) : rooms.length > 0 ? (
-        <div className="
-          grid gap-7 
-          grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 
-          animate-fadeUp delay-300
-        ">
+        <div
+          className="
+            grid gap-4 sm:gap-5 
+            grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 
+            animate-fadeUp delay-200
+          "
+        >
           {rooms.map((room) => (
-            <PropertyCard key={room._id} property={room} />
+            <div key={room._id} className="scale-[0.92] hover:scale-[0.97] transition">
+              <PropertyCard property={room} />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 animate-fadeUp">
-          <Home className="h-16 w-16 mx-auto text-muted-foreground" />
-          <h3 className="text-2xl font-semibold mt-4">No Rooms Found</h3>
-          <p className="text-muted-foreground mt-1">
-            Try changing your filters or searching a different location.
+        <div className="text-center py-20 animate-fadeUp">
+          <Home className="h-12 w-12 mx-auto text-muted-foreground" />
+          <h3 className="text-lg font-semibold mt-3">No Rooms Found</h3>
+          <p className="text-muted-foreground text-sm">
+            Try adjusting filters or searching another location.
           </p>
         </div>
       )}
 
-      <Footer />
+   
 
-      {/* Animations */}
+      {/* ANIMATIONS */}
       <style>{`
         .animate-fadeUp {
-          animation: fadeUp 0.7s ease forwards;
+          animation: fadeUp 0.5s ease forwards;
         }
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(14px); }
           to { opacity: 1; transform: translateY(0); }
         }
 
         .animate-fadeDown {
-          animation: fadeDown 0.4s ease forwards;
+          animation: fadeDown 0.35s ease forwards;
         }
         @keyframes fadeDown {
           from { opacity: 0; transform: translateY(-6px); }
