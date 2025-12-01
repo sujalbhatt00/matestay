@@ -129,13 +129,32 @@
     flex-direction: column;
   }
 }
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out forwards;
+}
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {

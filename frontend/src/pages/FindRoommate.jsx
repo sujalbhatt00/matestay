@@ -5,7 +5,13 @@ import RoommateCard from "@/components/RoommateCard";
 import { Loader2 } from "lucide-react";
 
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { LocationCombobox } from "@/components/ui/LocationCombobox";
 
@@ -43,8 +49,8 @@ const FindRoommatesPage = () => {
         if (location) params.append("location", location);
         if (genderFilter !== "Any") params.append("gender", genderFilter);
         if (budget) params.append("budget", budget);
-        
-const res = await axios.get(`/user/search-public?${params.toString()}`);
+
+        const res = await axios.get(`/user/search-public?${params.toString()}`);
         setRoommates(res.data);
       } catch (err) {
         setError("Could not load roommates. Please try again later.");
@@ -67,7 +73,7 @@ const res = await axios.get(`/user/search-public?${params.toString()}`);
 
       {/* Filter Section */}
       <div className="flex flex-col md:flex-row gap-5 justify-center mb-12">
-        
+
         {/* Location */}
         <div className="w-full max-w-xs">
           <Label className="text-sm font-medium">Location</Label>
@@ -128,18 +134,30 @@ const res = await axios.get(`/user/search-public?${params.toString()}`);
       {!loading && !error && (
         <>
           {roommates.length > 0 ? (
-            <div className="grid 
-              grid-cols-1 
-              sm:grid-cols-2 
-              md:grid-cols-3 
-              lg:grid-cols-4 
-              xl:grid-cols-5 
-              gap-6"
-            >
-              {roommates.map((user) => (
-                <RoommateCard key={user._id} roommate={user} />
-              ))}
-            </div>
+            <>
+              {/* ⭐ MOBILE GRID — 3 per row */}
+              <div className="grid grid-cols-3 gap-6 md:hidden">
+                {roommates.map((user) => (
+                  <RoommateCard key={user._id} roommate={user} />
+                ))}
+              </div>
+
+              {/* ⭐ DESKTOP GRID */}
+              <div
+                className="
+                  hidden
+                  md:grid 
+                  md:grid-cols-3 
+                  lg:grid-cols-4 
+                  xl:grid-cols-5 
+                  gap-6
+                "
+              >
+                {roommates.map((user) => (
+                  <RoommateCard key={user._id} roommate={user} />
+                ))}
+              </div>
+            </>
           ) : (
             <div className="text-center py-20 bg-card border rounded-lg p-10">
               <h3 className="text-xl font-semibold">No Roommates Found</h3>
