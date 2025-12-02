@@ -9,7 +9,6 @@ import {
 } from "../controllers/adminController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { verifyAdmin } from "../middleware/adminMiddleware.js";
-import { authLimiter } from "../middleware/rateLimiter.js";
 import { validateParams } from "../middleware/validate.js";
 import asyncHandler from "../middleware/asyncHandler.js";
 
@@ -22,17 +21,21 @@ const idParamSchema = Joi.object({
     .messages({ "string.pattern.base": "Invalid id" }),
 });
 
-// All routes require auth + admin
 router.use(verifyToken);
 router.use(verifyAdmin);
 
-// Apply admin limiter to protect admin APIs
-router.use(authLimiter);
-
 router.get("/stats", asyncHandler(getDashboardStats));
 router.get("/users", asyncHandler(getAllUsersAdmin));
-router.delete("/users/:id", validateParams(idParamSchema), asyncHandler(deleteUserAdmin));
+router.delete(
+  "/users/:id",
+  validateParams(idParamSchema),
+  asyncHandler(deleteUserAdmin)
+);
 router.get("/properties", asyncHandler(getAllPropertiesAdmin));
-router.delete("/properties/:id", validateParams(idParamSchema), asyncHandler(deletePropertyAdmin));
+router.delete(
+  "/properties/:id",
+  validateParams(idParamSchema),
+  asyncHandler(deletePropertyAdmin)
+);
 
 export default router;

@@ -51,7 +51,6 @@ const Navbar = () => {
 
   return (
     <>
-      {/* DESKTOP NAV */}
       <nav className="hidden md:block fixed top-5 left-1/2 -translate-x-1/2
         z-50 w-[88%] bg-background/60 backdrop-blur-xl border border-white/10
         shadow-[0_0_25px_rgba(0,0,0,0.08)] rounded-2xl px-6 py-3">
@@ -169,7 +168,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* MOBILE TOP BAR (theme toggle here) */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border flex items-center justify-between px-4 py-2 md:hidden">
         <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
           <img src="/Logo.png" width={30} alt="logo" />
@@ -180,7 +178,6 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* MOBILE BOTTOM NAV */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border md:hidden">
         <div className="flex items-center justify-between px-3 py-2">
 
@@ -192,6 +189,17 @@ const Navbar = () => {
           <button onClick={() => navigate("/find-rooms")} className="flex flex-col items-center text-[10px]">
             <BedDouble className="h-5 w-5" />
             Rooms
+          </button>
+
+          <button
+            onClick={() => {
+              if (user) navigate("/create-listing");
+              else setShowAuth(true);
+            }}
+            className="flex flex-col items-center text-[10px]"
+          >
+            <Plus className="h-5 w-5" />
+            Post
           </button>
 
           <button onClick={() => navigate("/find-roommates")} className="flex flex-col items-center text-[10px]">
@@ -221,7 +229,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* MOBILE PROFILE MENU */}
       {showMobileProfile && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center md:hidden"
           onClick={() => setShowMobileProfile(false)}>
