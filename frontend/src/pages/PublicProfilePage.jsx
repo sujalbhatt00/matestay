@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Mail, MapPin, DollarSign, User, Calendar, Phone, MessageSquare, Search, Star } from 'lucide-react';
+import { Loader2, MapPin, DollarSign, User, Calendar, MessageSquare, Search, Star } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -24,8 +24,7 @@ const PublicProfilePage = () => {
       try {
         const res = await axios.get(`/user/public-profile/${userId}`);
         setProfile(res.data);
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
+      } catch (_) {
         toast.error("Could not load profile.");
         setProfile(null);
       } finally {
@@ -48,8 +47,7 @@ const PublicProfilePage = () => {
     try {
       const res = await axios.post('/conversations', { receiverId: userId });
       navigate(`/chat/${res.data._id}`);
-    } catch (err) {
-      console.error("Failed to start chat:", err);
+    } catch (_) {
       toast.error("Could not start chat. Please try again later.");
     } finally {
       setIsStartingChat(false);
@@ -81,7 +79,9 @@ const PublicProfilePage = () => {
     return (
       <div className="text-center pt-32">
         <h2 className="text-2xl font-bold">Profile Not Found</h2>
-        <p className="text-muted-foreground">This user may not exist or has not completed their profile.</p>
+        <p className="text-muted-foreground">
+          This user may not exist or has not completed their profile.
+        </p>
       </div>
     );
   }
@@ -112,7 +112,9 @@ const PublicProfilePage = () => {
           />
           <div className="text-center sm:text-left flex-grow">
             <h1 className="text-3xl font-bold">{name}</h1>
-            <p className="text-lg text-muted-foreground">{occupation || 'No occupation set'}</p>
+            <p className="text-lg text-muted-foreground">
+              {occupation || 'No occupation set'}
+            </p>
             {location && (
               <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center sm:justify-start gap-1">
                 <MapPin className="w-4 h-4" /> {location}
@@ -122,12 +124,13 @@ const PublicProfilePage = () => {
               <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
                 <div className="flex">{renderStars(averageRating)}</div>
                 <span className="text-sm font-semibold">{averageRating}</span>
-                <span className="text-xs text-muted-foreground">({totalReviews} reviews)</span>
+                <span className="text-xs text-muted-foreground">
+                  ({totalReviews} reviews)
+                </span>
               </div>
             )}
           </div>
-          
-          {/* ✅ FIX: Message button now always visible for logged-in users (except own profile) */}
+
           {loggedInUser && loggedInUser._id !== userId && (
             <Button 
               onClick={handleStartChat} 
@@ -147,8 +150,7 @@ const PublicProfilePage = () => {
               )}
             </Button>
           )}
-          
-          {/* Show login prompt if not logged in */}
+
           {!loggedInUser && (
             <Button 
               onClick={() => {
@@ -166,7 +168,9 @@ const PublicProfilePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-background p-4 rounded-lg border">
             <h3 className="text-lg font-semibold mb-3">About</h3>
-            <p className="text-muted-foreground text-sm">{bio || 'No bio available.'}</p>
+            <p className="text-muted-foreground text-sm">
+              {bio || 'No bio available.'}
+            </p>
           </div>
           <div className="bg-background p-4 rounded-lg border space-y-3">
             <h3 className="text-lg font-semibold mb-2">Details</h3>
@@ -194,15 +198,18 @@ const PublicProfilePage = () => {
           {lifestyle.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {lifestyle.map(tag => (
-                <Badge key={tag} variant="secondary" className="text-sm">{tag}</Badge>
+                <Badge key={tag} variant="secondary" className="text-sm">
+                  {tag}
+                </Badge>
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">No lifestyle tags selected.</p>
+            <p className="text-muted-foreground text-sm">
+              No lifestyle tags selected.
+            </p>
           )}
         </div>
 
-        {/* Review Section */}
         <div className="mt-8">
           <ReviewSection userId={userId} />
         </div>

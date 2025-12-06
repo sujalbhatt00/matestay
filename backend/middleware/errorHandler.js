@@ -10,7 +10,7 @@ export default function errorHandler(err, req, res, next) {
     method: req.method,
   });
 
-  // In production hide stack traces
+  
   const payload = { message };
   if (process.env.NODE_ENV !== "production") payload.stack = err.stack;
 

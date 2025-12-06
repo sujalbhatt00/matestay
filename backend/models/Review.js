@@ -32,7 +32,7 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Prevent duplicate reviews from the same user
+
 reviewSchema.index({ reviewer: 1, reviewee: 1 }, { unique: true });
 
 export default mongoose.model("Review", reviewSchema);

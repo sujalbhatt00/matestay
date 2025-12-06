@@ -31,7 +31,7 @@ const ChatMessage = ({ message, isOwnMessage }) => {
             <TimeAgo date={message.createdAt} formatter={customFormatter} />
           </p>
           {isOwnMessage && (
-            // Add logic here for read receipts
+          
             <CheckCheck className="h-3 w-3" /> 
           )}
         </div>

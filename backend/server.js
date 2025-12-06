@@ -50,19 +50,19 @@ const startServer = async () => {
       res.send("Matestay API is running...");
     });
 
-    // ✅ FIX: Improved Socket.IO handling
+    
     const userSocketMap = new Map();
 
     io.on("connection", (socket) => {
-      console.log("✅ User connected:", socket.id);
+      console.log(" User connected:", socket.id);
 
-      // Register user with their socket ID
+    
       socket.on("addUser", (userId) => {
         if (userId) {
           userSocketMap.set(userId, socket.id);
-          console.log(`✅ User ${userId} registered with socket ${socket.id}`);
+          console.log(` User ${userId} registered with socket ${socket.id}`);
           
-          // Emit online users list
+          
           const onlineUsers = Array.from(userSocketMap.entries()).map(([userId, socketId]) => ({
             userId,
             socketId
@@ -71,22 +71,22 @@ const startServer = async () => {
         }
       });
 
-      // ✅ FIX: Better message sending logic
+      
       socket.on("sendMessage", (message) => {
-        console.log("📨 Received message to send:", message);
+        console.log(" Received message to send:", message);
         
         const receiverSocketId = userSocketMap.get(message.receiverId);
         const senderSocketId = userSocketMap.get(message.senderId);
         
         if (receiverSocketId) {
-          console.log(`✅ Sending message to receiver ${message.receiverId} via socket ${receiverSocketId}`);
+          console.log(` Sending message to receiver ${message.receiverId} via socket ${receiverSocketId}`);
           io.to(receiverSocketId).emit("getMessage", message);
           io.to(receiverSocketId).emit("receiveMessage", message);
         } else {
-          console.log(`⚠️ Receiver ${message.receiverId} is not online`);
+          console.log(` Receiver ${message.receiverId} is not online`);
         }
 
-        // Also emit back to sender for confirmation (optional)
+      
         if (senderSocketId && senderSocketId !== receiverSocketId) {
           io.to(senderSocketId).emit("messageSent", message);
         }
@@ -101,14 +101,14 @@ const startServer = async () => {
       });
 
       socket.on("disconnect", () => {
-        console.log("❌ User disconnected:", socket.id);
+        console.log(" User disconnected:", socket.id);
         
         for (const [userId, socketId] of userSocketMap.entries()) {
           if (socketId === socket.id) {
             userSocketMap.delete(userId);
-            console.log(`❌ User ${userId} removed from online users`);
+            console.log(` User ${userId} removed from online users`);
             
-            // Emit updated online users list
+          
             const onlineUsers = Array.from(userSocketMap.entries()).map(([userId, socketId]) => ({
               userId,
               socketId
@@ -122,11 +122,11 @@ const startServer = async () => {
 
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
-      console.log(`🌐 Client URL: ${process.env.CLIENT_URL}`);
+      console.log(` Server running on port ${PORT}`);
+      console.log(` Client URL: ${process.env.CLIENT_URL}`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    console.error(" Failed to start server:", error);
     process.exit(1);
   }
 };

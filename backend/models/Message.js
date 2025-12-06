@@ -16,7 +16,7 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // ✅ NEW: Track read status for each user
+    
     readBy: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

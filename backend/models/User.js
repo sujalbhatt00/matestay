@@ -62,24 +62,24 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // --- NEW/UPDATED FIELDS FOR DAILY MESSAGE LIMIT ---
+  -
     dailyMessageCount: {
       type: Number,
       default: 0,
     },
     lastMessageReset: {
       type: Date,
-      default: () => new Date(), // Set default to current time
+      default: () => new Date(), 
     },
-    // --- END NEW/UPDATED FIELDS ---
+    
   },
   { timestamps: true }
 );
 
-// This helper function will check and reset the daily count
+
 userSchema.methods.checkAndResetDailyCount = async function () {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to beginning of today
+  today.setHours(0, 0, 0, 0); 
 
   if (!this.lastMessageReset || this.lastMessageReset < today) {
     this.dailyMessageCount = 0;

@@ -1,7 +1,6 @@
 import Review from "../models/Review.js";
 import User from "../models/User.js";
 
-// Helper function to recalculate user's average rating
 const updateUserRating = async (userId) => {
   const reviews = await Review.find({ reviewee: userId });
   const totalReviews = reviews.length;
@@ -120,7 +119,7 @@ export const updateReview = async (req, res) => {
   }
 };
 
-// UPDATED: Delete a review (users can delete their own, admins can delete any)
+
 export const deleteReview = async (req, res) => {
   try {
     const { reviewId } = req.params;

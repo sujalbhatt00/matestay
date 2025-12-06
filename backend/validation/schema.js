@@ -80,7 +80,7 @@ export const updatePropertySchema = Joi.object({
   title: Joi.string().min(3).max(100).optional(),
   description: Joi.string().min(10).max(1000).optional(),
 
-  // 🔥 Updated to match frontend
+  //  Updated to match frontend
   propertyType: Joi.string()
     .valid("Apartment", "House", "Room", "Studio", "PG", "Hostel", "Other")
     .optional(),

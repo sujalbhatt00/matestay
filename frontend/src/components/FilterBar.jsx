@@ -4,9 +4,9 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-// This component now takes a function prop to send its data to the parent
+
 const FilterBar = ({ onApplyFilters }) => {
-  // Internal state to track filter values before applying
+  
   const [budget, setBudget] = useState(50000); // Default max budget
   const [gender, setGender] = useState("Any");
 

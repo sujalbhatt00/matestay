@@ -22,7 +22,7 @@ const PremiumPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  // ⭐ Plans based on controller
+  //  Plans based on controller
   const plans = [
     {
       id: "monthly",

@@ -11,7 +11,7 @@ const FloatingChatButton = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ FIX: Don't render if user is not logged in OR on chat page
+  
   if (!user || location.pathname.startsWith('/chat')) {
     return null;
   }

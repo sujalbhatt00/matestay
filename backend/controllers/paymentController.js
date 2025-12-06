@@ -30,7 +30,7 @@ const initializeRazorpay = () => {
 
 razorpay = initializeRazorpay();
 
-//  UPDATED: New pricing structure
+
 export const createOrder = async (req, res) => {
   try {
     if (!razorpay) {
@@ -59,7 +59,7 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Invalid plan selected" });
     }
 
-    const amount = pricing[plan] * 100; // Convert to paise
+    const amount = pricing[plan] * 100; 
 
     const options = {
       amount,
@@ -108,7 +108,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-// Verify payment (no changes needed)
+// Verify payment 
 export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;

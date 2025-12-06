@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const PropertySchema = new mongoose.Schema(
   {
-    // Link to the user who posted the listing
+    
     lister: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -23,7 +23,7 @@ const PropertySchema = new mongoose.Schema(
       enum: ["Apartment", "House", "Room", "Studio", "Other"],
       required: true,
     },
-    location: { // Can reuse the location string format
+    location: { 
       type: String,
       required: true,
     },
@@ -39,8 +39,8 @@ const PropertySchema = new mongoose.Schema(
       type: Number,
       default: 1,
     },
-    amenities: [String], // e.g., ["Wifi", "Kitchen", "Parking", "AC"]
-    photos: [String], // Array of Cloudinary URLs
+    amenities: [String], 
+    photos: [String], 
     availableFrom: {
       type: Date,
       default: Date.now,
