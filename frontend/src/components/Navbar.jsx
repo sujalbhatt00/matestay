@@ -20,6 +20,7 @@ import AuthModal from "./AuthModal";
 import { useNavigate, NavLink } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { useChat } from "@/context/ChatContext";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,8 +50,17 @@ const Navbar = () => {
       isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
     }`;
 
+  const handleMessagesClick = () => {
+    if (!user) {
+      setShowAuth(true);
+    } else {
+      navigate("/chat");
+    }
+  };
+
   return (
     <>
+      {/* Desktop Navbar */}
       <nav className="hidden md:block fixed top-5 left-1/2 -translate-x-1/2
         z-50 w-[88%] bg-background/60 backdrop-blur-xl border border-white/10
         shadow-[0_0_25px_rgba(0,0,0,0.08)] rounded-2xl px-6 py-3">
@@ -76,7 +86,12 @@ const Navbar = () => {
               <BedDouble className="h-4 w-4" /> Find Rooms
             </button>
 
-            <NavLink to="/chat" className={navLinkClass}>
+            {/*  Messages button */}
+            <button
+              onClick={handleMessagesClick}
+              className={navLinkClass}
+              style={{ background: "none", border: "none", padding: 0 }}
+            >
               <div className="relative flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" />
                 Messages
@@ -87,7 +102,7 @@ const Navbar = () => {
                   </span>
                 )}
               </div>
-            </NavLink>
+            </button>
 
             {!user?.isPremium && (
               <NavLink to="/premium" className={navLinkClass}>
@@ -168,6 +183,7 @@ const Navbar = () => {
         </div>
       </nav>
 
+      {/* Mobile Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border flex items-center justify-between px-4 py-2 md:hidden">
         <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
           <img src="/Logo.png" width={30} alt="logo" />
@@ -178,6 +194,7 @@ const Navbar = () => {
         </button>
       </div>
 
+      {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border md:hidden">
         <div className="flex items-center justify-between px-3 py-2">
 
@@ -199,15 +216,22 @@ const Navbar = () => {
             className="flex flex-col items-center text-[10px]"
           >
             <Plus className="h-5 w-5" />
-            Post
+            Post 
           </button>
 
           <button onClick={() => navigate("/find-roommates")} className="flex flex-col items-center text-[10px]">
             <Users className="h-5 w-5" />
-            Mates
+            find Mates
           </button>
 
-          <button onClick={() => navigate("/chat")} className="flex flex-col items-center text-[10px] relative">
+          {/* Mobile Chat button opens login modal if not logged in */}
+          <button
+            onClick={() => {
+              if (!user) setShowAuth(true);
+              else navigate("/chat");
+            }}
+            className="flex flex-col items-center text-[10px] relative"
+          >
             <MessageSquare className="h-5 w-5" />
             Chat
             {unreadCount > 0 && (
@@ -217,8 +241,12 @@ const Navbar = () => {
             )}
           </button>
 
+          {/* Profile Button */}
           <button
-            onClick={() => setShowMobileProfile(true)}
+            onClick={() => {
+              if (!user) setShowAuth(true);
+              else setShowMobileProfile(true);
+            }}
             className="flex flex-col items-center text-[10px]"
           >
             <Avatar className="h-6 w-6">
@@ -229,19 +257,23 @@ const Navbar = () => {
         </div>
       </div>
 
-      {showMobileProfile && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center md:hidden"
-          onClick={() => setShowMobileProfile(false)}>
-          <div className="bg-background w-full p-6 rounded-t-2xl shadow-xl animate-slide-up"
-            onClick={(e) => e.stopPropagation()}>
-            
+      {/* Mobile Profile Sidebar */}
+      {showMobileProfile && user && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center md:hidden"
+          onClick={() => setShowMobileProfile(false)}
+        >
+          <div
+            className="bg-background w-full p-6 rounded-b-2xl shadow-xl animate-slide-down"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3 mb-4">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={user?.profilePic || defaultAvatar} />
+                <AvatarImage src={user.profilePic || defaultAvatar} />
               </Avatar>
               <div>
-                <p className="font-semibold">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="font-semibold">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
             </div>
 
@@ -260,7 +292,13 @@ const Navbar = () => {
                 </button>
               )}
 
-              <button onClick={() => { logout(); setShowMobileProfile(false); }} className="text-red-500">
+              <button
+                onClick={() => {
+                  logout();
+                  setShowMobileProfile(false);
+                }}
+                className="text-red-500"
+              >
                 Logout
               </button>
             </div>
