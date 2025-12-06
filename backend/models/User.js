@@ -62,7 +62,6 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-  -
     dailyMessageCount: {
       type: Number,
       default: 0,
@@ -75,7 +74,6 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 
 userSchema.methods.checkAndResetDailyCount = async function () {
   const today = new Date();
