@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import {
   Moon,
   Sun,
@@ -11,13 +11,15 @@ import {
   LayoutDashboard,
   Crown,
   Home,
-  BedDouble
+  BedDouble,
+  BookOpen,
+  Heart
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import AuthModal from "./AuthModal";
-import { useNavigate, NavLink } from "react-router-dom";
+import { useNavigate, NavLink, useLocation } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { useChat } from "@/context/ChatContext";
 
@@ -39,16 +41,28 @@ const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const { unreadCount } = useChat();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showAuth, setShowAuth] = useState(false);
   const [showMobileProfile, setShowMobileProfile] = useState(false);
+  const isHomePage = location.pathname === "/";
 
-  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
-
-  const navLinkClass = ({ isActive }) =>
-    `flex items-center gap-2 text-sm font-medium transition-colors ${
-      isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
-    }`;
+  const scrollToSection = (sectionId) => {
+    if (isHomePage) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      navigate("/");
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  };
 
   const handleMessagesClick = () => {
     if (!user) {
@@ -58,38 +72,70 @@ const Navbar = () => {
     }
   };
 
+  const handlePremiumClick = () => {
+    if (!user) {
+      setShowAuth(true);
+    } else {
+      navigate("/premium");
+    }
+  };
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
+
+  const navLinkClass = ({ isActive }) =>
+    `flex items-center gap-2 text-sm font-medium transition-colors ${
+      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+    }`;
+
   return (
     <>
       {/* Desktop Navbar */}
       <nav className="hidden md:block fixed top-5 left-1/2 -translate-x-1/2
-        z-50 w-[88%] bg-background/60 backdrop-blur-xl border border-white/10
-        shadow-[0_0_25px_rgba(0,0,0,0.08)] rounded-2xl px-6 py-3">
+        z-50 w-[88%] bg-background/60 backdrop-blur-xl border border-border
+        shadow-sm rounded-lg px-6 py-3">
 
         <div className="flex items-center justify-between h-10">
           <div
             onClick={() => navigate("/")}
             className="flex items-center gap-2 cursor-pointer"
           >
-            <img src="/Logo.png" width={50} alt="Matestay" />
-            <span className="text-xl font-bold">Matestay</span>
+            <img src="/Logo.png" width={40} alt="Matestay" />
+            <span className="text-lg font-bold">Matestay</span>
           </div>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
+            {/* Always show Roommates and Rooms links */}
             <NavLink to="/find-roommates" className={navLinkClass}>
-              <Users className="h-4 w-4" /> Find Roommates
+              <Users className="h-4 w-4" />Flatmates
             </NavLink>
-
             <button
               onClick={() => navigate("/find-rooms?type=room&showFilters=1")}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <BedDouble className="h-4 w-4" /> Find Rooms
+              <BedDouble className="h-4 w-4" />Flats
             </button>
+            
+            {/* Show landing page sections if on home page */}
+            {isHomePage && (
+              <>
+                <button
+                  onClick={() => scrollToSection("why-us")}
+                  className="flex items-center gap-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  Why Us
+                </button>
+                <button
+                  onClick={() => scrollToSection("about")}
+                  className="flex items-center gap-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  About
+                </button>
+              </>
+            )}
 
-            {/*  Messages button */}
             <button
               onClick={handleMessagesClick}
-              className={navLinkClass}
+              className="flex items-center gap-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
               style={{ background: "none", border: "none", padding: 0 }}
             >
               <div className="relative flex items-center gap-1">
@@ -105,33 +151,36 @@ const Navbar = () => {
             </button>
 
             {!user?.isPremium && (
-              <NavLink to="/premium" className={navLinkClass}>
-                <Crown className="h-4 w-4 text-yellow-500" /> Premium
-              </NavLink>
+              <button
+                onClick={handlePremiumClick}
+                className="flex items-center gap-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Crown className="h-4 w-4" /> Premium
+              </button>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={toggleTheme}
-              className="rounded-full hover:bg-accent">
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              className="rounded-full hover:bg-accent h-9 w-9">
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
             {user && (
               <Button
                 onClick={() => navigate("/create-listing")}
-                className="bg-primary text-primary-foreground px-5 py-1.5 rounded-full shadow"
+                className="bg-black dark:bg-white text-white dark:text-black px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-900 dark:hover:bg-gray-100 h-9"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                List Property
+                add flat
               </Button>
             )}
 
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="p-0 rounded-full">
-                    <Avatar className="h-10 w-10">
+                  <Button variant="ghost" className="p-0 rounded-full h-9 w-9">
+                    <Avatar className="h-8 w-8">
                       <AvatarImage src={user.profilePic || defaultAvatar} />
                       <AvatarFallback>{user.name?.[0]}</AvatarFallback>
                     </Avatar>
@@ -174,7 +223,7 @@ const Navbar = () => {
 
               </DropdownMenu>
             ) : (
-              <Button className="bg-primary text-primary-foreground px-5 rounded-full shadow"
+              <Button className="bg-black dark:bg-white text-white dark:text-black px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-900 dark:hover:bg-gray-100 h-9"
                 onClick={() => setShowAuth(true)}>
                 Sign In
               </Button>

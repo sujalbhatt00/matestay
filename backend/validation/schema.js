@@ -55,6 +55,15 @@ export const updateProfileSchema = Joi.object({
       "Other"
     )
     .optional(),
+  smokingPreference: Joi.string()
+    .valid("Any", "Non-smoker", "Smoker")
+    .optional(),
+  sleepSchedule: Joi.string()
+    .valid("Any", "Early Bird", "Night Owl")
+    .optional(),
+  cleanlinessLevel: Joi.string()
+    .valid("Any", "Very Messy", "Messy", "Average", "Clean", "Very Clean")
+    .optional(),
 });
 
 // --- Property Schemas ---

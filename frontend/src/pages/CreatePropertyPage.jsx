@@ -288,7 +288,7 @@ const CreatePropertyPage = () => {
         </div>
       </div>
 
-      <Footer />
+    
     </div>
   );
 };

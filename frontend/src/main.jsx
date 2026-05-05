@@ -7,17 +7,15 @@ import { ThemeProvider } from './components/theme-provider.jsx';
 
 
 createRoot(document.getElementById('root')).render(
-  // <StrictMode>
-    <AuthProvider>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        storageKey="vite-ui-theme"
-      >
-        <App />
-      </ThemeProvider>  
-    </AuthProvider>
-  // {/* </StrictMode> */}
+  <AuthProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      storageKey="vite-ui-theme"
+    >
+      <App />
+    </ThemeProvider>
+  </AuthProvider>
 );
 

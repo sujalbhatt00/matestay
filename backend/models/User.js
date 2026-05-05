@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     verified: { type: Boolean, default: false },
     verificationToken: { type: String },
     profilePic: { type: String, default: "" },
@@ -26,6 +26,23 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["Male", "Female", "Non-binary", "Transgender", "Any", "Other"],
       default: 'Any',
+    },
+
+    // Additional preference fields for matching
+    smokingPreference: {
+      type: String,
+      enum: ["Any", "Non-smoker", "Smoker"],
+      default: "Any",
+    },
+    sleepSchedule: {
+      type: String,
+      enum: ["Any", "Early Bird", "Night Owl"],
+      default: "Any",
+    },
+    cleanlinessLevel: {
+      type: String,
+      enum: ["Any", "Very Messy", "Messy", "Average", "Clean", "Very Clean"],
+      default: "Any",
     },
 
     // Review fields

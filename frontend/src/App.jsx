@@ -9,10 +9,10 @@ import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import FloatingChatButton from "./components/FloatingChatButton";
-import ScrollToTop from "./components/ScrollToTop"; // ⭐ NEW
+import ScrollToTop from "./components/ScrollToTop"; 
 
 // Pages
-import Home from "./pages/Home";
+import LandingPage from "./pages/LandingPage";
 import FindRoommate from "./pages/FindRoommate";
 import ChatPage from "./pages/ChatPage";
 import Profile from "./pages/Profile";
@@ -23,11 +23,9 @@ import PropertyDetailPage from "./pages/PropertyDetailPage";
 import PropertiesSearchPage from "./pages/PropertiesSearchPage";
 import LocationSearchPage from "./components/LocationSearchPage";
 import AllPropertiesPage from "./pages/AllPropertiesPage";
-import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "./pages/AdminDashboard";
 import PremiumPage from "./pages/PremiumPage";
 import EditPropertyPage from "./pages/EditPropertyPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Footer pages
 import AboutUs from "./pages/AboutUs";
@@ -48,23 +46,21 @@ function MainContent() {
   const location = useLocation();
 
   return (
-    <main className="flex-grow" key={location.pathname}>
+    <main className="flex-grow pb-20 md:pb-0" key={location.pathname}>
       <Routes>
 
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/find-roommates" element={<FindRoommate />} />
 
         {/*  Find Rooms Route */}
         <Route path="/find-rooms" element={<FindRooms />} />
 
-        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/profile/:userId" element={<PublicProfilePage />} />
         <Route path="/properties/:id" element={<PropertyDetailPage />} />
         <Route path="/search" element={<LocationSearchPage />} />
         <Route path="/properties/all" element={<AllPropertiesPage />} />
         <Route path="/properties/search" element={<PropertiesSearchPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/* Footer Routes */}
         <Route path="/about" element={<AboutUs />} />
@@ -94,10 +90,8 @@ function MainContent() {
 // ---------------- APP WRAPPER ----------------
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <AuthProvider>
-        <ChatProvider>
-          <Router>
+    <ChatProvider>
+      <Router>
 
             {/*  Auto Scroll on Every Page Navigation */}
             <ScrollToTop />
@@ -112,8 +106,6 @@ function App() {
             <Toaster position="top-right" richColors />
           </Router>
         </ChatProvider>
-      </AuthProvider>
-    </ThemeProvider>
   );
 }
 

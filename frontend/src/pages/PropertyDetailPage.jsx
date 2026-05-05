@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from '@/api/axiosInstance';
 import Footer from '@/components/Footer';
+import RoomInquiryModal from '@/components/RoomInquiryModal';
 import { Loader2, MapPin, Bath, BedDouble, CalendarDays, Wifi, Utensils, ParkingCircle, Snowflake, ChevronLeft, MessageSquare, Edit, Trash2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ const PropertyDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -83,13 +85,30 @@ const PropertyDetailPage = () => {
       alert("You cannot start a chat with yourself.");
       return;
     }
+    // Show the inquiry modal instead of directly creating a conversation
+    setShowInquiryModal(true);
+  };
+
+  const handleSendInquiryMessage = async (message) => {
+    if (!user || !property || !property.lister) return;
+
     try {
+      // Create or get conversation
       const res = await axios.post("/conversations", {
         receiverId: property.lister._id,
       });
+
+      // Send initial message with correct field name
+      await axios.post(`/messages`, {
+        conversationId: res.data._id,
+        text: message,
+      });
+
+      toast.success("Message sent!");
       navigate(`/chat/${res.data._id}`);
     } catch (err) {
-      alert("Could not start chat. Please try again later.");
+      toast.error("Could not send message. Please try again later.");
+      console.error(err);
     }
   };
 
@@ -130,9 +149,9 @@ const PropertyDetailPage = () => {
             <ChevronLeft className="h-4 w-4 mr-1" /> Back to Listings
           </Link>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Left Column: Images */}
-            <div className="md:col-span-5 lg:col-span-5">
+            <div className="md:col-span-1 lg:col-span-5">
               <div className="sticky top-28">
                 <img
                   src={selectedImage}
@@ -157,7 +176,7 @@ const PropertyDetailPage = () => {
             </div>
 
             {/* Center Column: Details */}
-            <div className="md:col-span-7 lg:col-span-4">
+            <div className="md:col-span-1 lg:col-span-4">
               <Badge variant="secondary" className="mb-2">{propertyType}</Badge>
               <h1 className="text-2xl lg:text-3xl font-bold mb-2">{title}</h1>
               <p className="flex items-center gap-1 text-md text-muted-foreground mb-4">
@@ -228,7 +247,7 @@ const PropertyDetailPage = () => {
             </div>
 
             {/* Right Column: Lister & Actions */}
-            <div className="md:col-span-12 lg:col-span-3">
+            <div className="col-span-1 md:col-span-2 lg:col-span-3">
               <div className="sticky top-28 bg-card border border-border rounded-lg p-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4">Listed By</h2>
                 <div className="flex items-center gap-3 mb-4">
@@ -251,7 +270,15 @@ const PropertyDetailPage = () => {
           </div>
         </div>
       </div>
-      <Footer />
+
+      {/* Room Inquiry Modal */}
+      {showInquiryModal && (
+        <RoomInquiryModal
+          property={property}
+          onClose={() => setShowInquiryModal(false)}
+          onSendMessage={handleSendInquiryMessage}
+        />
+      )}
     </div>
   );
 };

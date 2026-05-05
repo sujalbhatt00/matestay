@@ -65,9 +65,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative pt-32 pb-24 overflow-hidden">
-
-      {/* Background Image */}
+    <section className="relative pt-20 pb-16 sm:pt-28 sm:pb-20 md:pt-32 md:pb-24 overflow-hidden">
       <div className="absolute inset-0 -z-10">
         <img
           src={heroImage}
@@ -76,42 +74,34 @@ const Hero = () => {
         />
       </div>
 
-      {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/90 -z-10" />
 
       <div className="relative z-[2] container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-
-        {/* OLD TITLE (you wanted old theme) */}
-        <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 animate-fadeIn">
-          Find Your Perfect Roommate & Room
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 animate-fadeIn leading-tight">
+          Find your perfect flat and flatmate
         </h1>
 
-        <p className="text-lg text-muted-foreground mb-10 animate-fadeIn delay-100">
+        <p className="text-base sm:text-lg text-muted-foreground mb-8 sm:mb-10 animate-fadeIn delay-100">
           Safe, verified and instant matches.
         </p>
 
-        {/* SEARCH BOX WITH FILTERS (OLD UI but new styling) */}
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto animate-fadeIn delay-200">
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto animate-fadeIn delay-200 px-0">
           <div
-            className={`bg-card border border-border rounded-2xl shadow-xl 
-            px-6 py-6 flex flex-col gap-5 transition-all 
+            className={`bg-card border border-border rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl 
+            px-4 sm:px-6 py-5 sm:py-6 flex flex-col gap-4 sm:gap-5 transition-all 
             ${focused ? "scale-[1.02] shadow-primary/20" : ""}`}
           >
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
 
-            {/* Top Row */}
-            <div className="flex flex-col md:flex-row items-center gap-4">
-
-              {/* Type selector */}
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full md:w-40 px-3 py-2 rounded-xl bg-muted/40 text-sm font-medium border"
+                className="w-full sm:w-32 px-3 py-2 rounded-lg sm:rounded-xl bg-muted/40 text-xs sm:text-sm font-medium border h-10"
               >
                 <option value="roommate">Roommates</option>
                 <option value="room">Rooms</option>
               </select>
 
-              {/* Location */}
               <div className="flex-1 w-full">
                 <LocationCombobox
                   value={location}
@@ -121,38 +111,35 @@ const Hero = () => {
                 />
               </div>
 
-              {/* Search button */}
               <Button
                 type="submit"
-                className="h-11 rounded-full px-8 text-white font-semibold"
+                className="h-10 sm:h-11 rounded-lg sm:rounded-full px-6 sm:px-8 text-white font-semibold text-sm whitespace-nowrap"
                 style={{ backgroundColor: "#5b5dda" }}
               >
-                <Search className="h-4 w-4 mr-2" />
-                Search
+                <Search className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Search</span>
               </Button>
             </div>
 
-            {/* Expand Filters */}
             <button
               type="button"
               onClick={() => setExpandedFilters((v) => !v)}
-              className="flex items-center gap-2 text-primary text-sm font-medium mx-auto"
+              className="flex items-center justify-center gap-2 text-primary text-xs sm:text-sm font-medium mx-auto"
             >
               <SlidersHorizontal className="h-4 w-4" />
               More Filters
             </button>
 
-            {/* Filters section */}
             {expandedFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeDown">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 animate-fadeDown">
 
                 {type === "roommate" && (
                   <div>
-                    <label className="text-xs font-medium">Gender</label>
+                    <label className="text-xs font-medium block mb-1">Gender</label>
                     <select
                       value={gender}
                       onChange={(e) => setGender(e.target.value)}
-                      className="mt-1 px-3 py-2 rounded-xl border w-full"
+                      className="px-3 py-2 rounded-lg sm:rounded-xl border w-full text-sm h-10"
                     >
                       <option value="Any">Any</option>
                       <option value="Male">Male</option>
@@ -163,24 +150,24 @@ const Hero = () => {
                 )}
 
                 <div>
-                  <label className="text-xs font-medium">Max Budget (₹)</label>
+                  <label className="text-xs font-medium block mb-1">Max Budget (₹)</label>
                   <input
                     type="number"
                     min={0}
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
-                    className="mt-1 px-3 py-2 rounded-xl border w-full"
+                    className="px-3 py-2 rounded-lg sm:rounded-xl border w-full text-sm h-10"
                     placeholder="e.g. 10000"
                   />
                 </div>
 
                 {type === "room" && (
                   <div>
-                    <label className="text-xs font-medium">Property Type</label>
+                    <label className="text-xs font-medium block mb-1">Property Type</label>
                     <select
                       value={propertyType}
                       onChange={(e) => setPropertyType(e.target.value)}
-                      className="mt-1 px-3 py-2 rounded-xl border w-full"
+                      className="px-3 py-2 rounded-lg sm:rounded-xl border w-full text-sm h-10"
                     >
                       <option value="">Any</option>
                       <option value="Apartment">Apartment</option>
@@ -198,12 +185,14 @@ const Hero = () => {
           </div>
         </form>
 
-        {/* Stats */}
-        <div className="flex flex-wrap justify-center gap-4 mt-10 text-sm text-muted-foreground animate-fadeIn delay-300">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-8 sm:mt-10 text-xs sm:text-sm text-muted-foreground animate-fadeIn delay-300">
           <span>{stats.totalListings}+ Listings</span>
+          <span className="hidden sm:inline">|</span>
           <span>{stats.totalUsers}+ Users</span>
-          <span>Verified Profiles</span>
-          <span>Instant Messaging</span>
+          <span className="hidden sm:inline">|</span>
+          <span>Verified</span>
+          <span className="hidden sm:inline">|</span>
+          <span>Messaging</span>
         </div>
       </div>
 

@@ -1,157 +1,123 @@
-import React from 'react';
-import { Mail, Phone, MapPin, Instagram, Linkedin } from "lucide-react";
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Mail, MapPin, Instagram, Linkedin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const FooterLink = ({ to, children }) => (
   <li>
-    <Link to={to} className="hover:text-primary transition-colors">
+    <Link
+      to={to}
+      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+    >
       {children}
     </Link>
   </li>
 );
 
 const ContactItem = ({ Icon, children }) => (
-  <li className="flex items-start gap-3">
+  <li className="flex items-start gap-3 text-sm text-muted-foreground">
     <Icon className="h-5 w-5 text-primary mt-0.5" />
-    <div className="flex flex-col gap-1">
-      {children}
-    </div>
+    <div>{children}</div>
   </li>
 );
 
 const SocialIcon = ({ href, Icon, title }) => (
-  <a 
-    href={href} 
-    target="_blank" 
+  <a
+    href={href}
+    target="_blank"
     rel="noreferrer"
     title={title}
-    className="p-2 rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
+    className="p-2.5 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all duration-200"
   >
     <Icon className="h-5 w-5" />
   </a>
 );
 
-const TeamSocials = ({ name, linkedin, instagram }) => (
-  <div className="flex items-center justify-between w-full border border-border py-2 px-3 rounded-lg hover:bg-muted/50 transition">
-    <span className="font-medium text-sm text-foreground">{name}</span>
-    <div className="flex items-center gap-3">
-      <SocialIcon href={linkedin.href} Icon={Linkedin} title={linkedin.title} />
-      <SocialIcon href={instagram.href} Icon={Instagram} title={instagram.title} />
-    </div>
-  </div>
-);
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
-  const team = {
-    sujal: {
-      name: "Sujal",
-      linkedin: { href: "https://www.linkedin.com/in/sujal-b-139067249/", title: "Sujal on LinkedIn" },
-      instagram: { href: "https://www.instagram.com/sujalbhatt00", title: "Sujal on Instagram" },
-    },
-    shashank: {
-      name: "Shashank",
-      linkedin: { href: "https://www.linkedin.com/in/shashank-kumar-70742b292/", title: "Shashank on LinkedIn" },
-      instagram: { href: "https://www.instagram.com/shashank__.kumar/", title: "Shashank on Instagram" },
-    },
-  };
-
-  const emails = [
-    { href: "mailto:matestaypvt@gmail.com", label: "matestaypvt@gmail.com" },
-    { href: "mailto:shashankmuz3@gmail.com", label: "shashankmuz3@gmail.com" },
-    { href: "mailto:sujalbhatt500@gmail.com", label: "sujalbhatt500@gmail.com" },
-  ];
-
-  const phones = [
-    { number: "+91 8979312715" },
-    { number: "+91 9304923385" },
-  ];
-
   return (
-    <footer className="bg-card border-t border-border pt-16 pb-8 mt-auto">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="mt-auto border-t border-border bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* TOP GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-          {/* BRAND */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <img src="/Logo.png" width={42} alt="Logo" />
-              <span className="text-2xl font-semibold tracking-tight text-foreground">Matestay</span>
+          {/* Brand Section */}
+          <div className="lg:col-span-5 space-y-5">
+            <div className="flex items-center gap-2">
+              <img src="/Logo.png" width={40} alt="Logo" />
+              <span className="text-xl font-semibold tracking-tight">
+                Matestay
+              </span>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Making roommate finding simple, safe, and trustworthy.  
-              Your comfort and safety are our priority.
+
+            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+              Find roommates easily and safely. We focus on trust, comfort,
+              and better shared living experiences.
             </p>
-          </div>
 
-          {/* COMPANY LINKS */}
-          <div>
-            <h4 className="font-semibold mb-4 text-foreground">Company</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <FooterLink to="/about">About Us</FooterLink>
-              <FooterLink to="/contact">Contact Support</FooterLink>
-              <FooterLink to="/careers">Careers</FooterLink>
-              <FooterLink to="/blog">Blog</FooterLink>
-            </ul>
-          </div>
-
-          {/* TEAM */}
-          <div>
-            <h4 className="font-semibold mb-4 text-foreground">Founding Team</h4>
-            <div className="space-y-3">
-              <TeamSocials {...team.sujal} />
-              <TeamSocials {...team.shashank} />
+            <div className="flex gap-3 pt-2">
+              <SocialIcon
+                href="https://www.linkedin.com"
+                Icon={Linkedin}
+                title="LinkedIn"
+              />
+              <SocialIcon
+                href="https://www.instagram.com"
+                Icon={Instagram}
+                title="Instagram"
+              />
             </div>
           </div>
 
-          {/* CONTACT */}
-          <div>
-            <h4 className="font-semibold mb-4 text-foreground">Contact</h4>
-            <ul className="space-y-4 text-sm text-muted-foreground">
+          {/* Links Section */}
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
 
-              <ContactItem Icon={MapPin}>
-                <span>Dehradun, Uttarakhand, India</span>
-              </ContactItem>
+            {/* Company */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4 text-foreground">
+                Company
+              </h4>
+              <ul className="space-y-3">
+                <FooterLink to="/about">About Us</FooterLink>
+                <FooterLink to="/contact">Contact</FooterLink>
+                <FooterLink to="/careers">Careers</FooterLink>
+                <FooterLink to="/blog">Blog</FooterLink>
+              </ul>
+            </div>
 
-              <ContactItem Icon={Phone}>
-                {phones.map((p, i) => <span key={i}>{p.number}</span>)}
-              </ContactItem>
+            {/* Contact */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4 text-foreground">
+                Contact
+              </h4>
+              <ul className="space-y-4">
+                <ContactItem Icon={MapPin}>
+                  Dehradun, Uttarakhand, India
+                </ContactItem>
 
-              <ContactItem Icon={Mail}>
-                {emails.map((m, i) => (
-                  <a key={i} href={m.href} className="hover:text-primary transition-colors">
-                    {m.label}
+                <ContactItem Icon={Mail}>
+                  <a
+                    href="mailto:matestaypvt@gmail.com"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    imsujalbhatt2005@gmail.com
                   </a>
-                ))}
-              </ContactItem>
+                </ContactItem>
+              </ul>
+            </div>
 
-            </ul>
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="h-px w-full bg-border my-8" />
 
-        {/* SEPARATOR */}
-        <div className="border-t border-border mb-6"></div>
-
-        {/* BOTTOM SECTION */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-
-          {/* COPYRIGHT */}
-          <div className="text-sm text-muted-foreground text-center md:text-left">
-            © {currentYear} Matestay Private Limited.  
-            <span className="block text-xs mt-1">Designed & Built by Matestay Team</span>
-          </div>
-
-          {/* LEGAL LINKS */}
-          <div className="flex gap-4 sm:gap-6 text-sm text-muted-foreground">
-            <FooterLink to="/privacy">Privacy Policy</FooterLink>
-            <FooterLink to="/terms">Terms of Service</FooterLink>
-            <FooterLink to="/cookies">Cookie Policy</FooterLink>
-          </div>
-
+        {/* Bottom */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-sm text-muted-foreground">
+          <p>© {currentYear} Matestay</p>
+          <p className="text-xs opacity-80">
+            Built for safer shared living.
+          </p>
         </div>
 
       </div>

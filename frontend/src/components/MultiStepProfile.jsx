@@ -41,6 +41,9 @@ export default function MultiStepProfile({ initialData, onSaved }) {
     bio: initialData?.bio || "",
     lifestyle: initialData?.lifestyle || [],
     profilePic: initialData?.profilePic || "",
+    smokingPreference: initialData?.smokingPreference || "Any",
+    sleepSchedule: initialData?.sleepSchedule || "Any",
+    cleanlinessLevel: initialData?.cleanlinessLevel || "Any",
   });
 
   const [previousPhotoUrl, setPreviousPhotoUrl] = useState(initialData?.profilePic || "");
@@ -264,7 +267,71 @@ export default function MultiStepProfile({ initialData, onSaved }) {
             </div>
           </div>
 
-          <div className="flex justify-between">
+          {/* Living Preferences */}
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h3 className="text-lg font-semibold">Living Preferences</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Smoking Preference */}
+              <div>
+                <Label className="text-sm font-medium">Smoking Preference</Label>
+                <Select
+                  value={formData.smokingPreference}
+                  onValueChange={(v) => setFormData({ ...formData, smokingPreference: v })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Any">Any</SelectItem>
+                    <SelectItem value="Non-smoker">Non-smoker</SelectItem>
+                    <SelectItem value="Smoker">Smoker</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sleep Schedule */}
+              <div>
+                <Label className="text-sm font-medium">Sleep Schedule</Label>
+                <Select
+                  value={formData.sleepSchedule}
+                  onValueChange={(v) => setFormData({ ...formData, sleepSchedule: v })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select schedule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Any">Any</SelectItem>
+                    <SelectItem value="Early Bird">Early Bird</SelectItem>
+                    <SelectItem value="Night Owl">Night Owl</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Cleanliness Level */}
+              <div>
+                <Label className="text-sm font-medium">Cleanliness Level</Label>
+                <Select
+                  value={formData.cleanlinessLevel}
+                  onValueChange={(v) => setFormData({ ...formData, cleanlinessLevel: v })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Any">Any</SelectItem>
+                    <SelectItem value="Very Messy">Very Messy</SelectItem>
+                    <SelectItem value="Messy">Messy</SelectItem>
+                    <SelectItem value="Average">Average</SelectItem>
+                    <SelectItem value="Clean">Clean</SelectItem>
+                    <SelectItem value="Very Clean">Very Clean</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-6">
             <Button variant="outline" onClick={prevStep}>Back</Button>
             <Button disabled={isSubmitting} onClick={handleSubmit}>
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : "Save Profile"}
@@ -272,6 +339,7 @@ export default function MultiStepProfile({ initialData, onSaved }) {
           </div>
         </div>
       )}
+    
     </div>
   );
 }

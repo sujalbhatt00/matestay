@@ -1,9 +1,13 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
 import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.js";
+import { generalLimiter } from "./middleware/rateLimiter.js";
+import sanitizeRequest from "./middleware/sanitizeRequest.js";
+import errorHandler from "./middleware/errorHandler.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
@@ -26,12 +30,49 @@ const io = new Server(server, {
   },
 });
 
+// ============ SECURITY MIDDLEWARE ============
+
+// 1. Helmet - Set HTTP response headers for security
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", process.env.CLIENT_URL || "http://localhost:5173"],
+    },
+  },
+  frameguard: { action: "DENY" },
+  noSniff: true,
+  xssFilter: true,
+}));
+
+// 2. CORS - Cross-Origin Resource Sharing
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 3. Body Parser with security limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 4. Data Sanitization - Prevent NoSQL Injection
+// NOTE: Express 5 makes req.query a read-only getter, so some sanitizers that do `req.query = ...`
+// will crash. This middleware mutates objects in-place.
+app.use(sanitizeRequest({
+  replaceWith: "_",
+  onSanitize: ({ key }) => {
+    console.warn(`⚠️ Suspicious input sanitized in ${key}`);
+  },
+}));
+
+// 5. Global Rate Limiter - Basic protection for all requests
+app.use(generalLimiter);
 
 const startServer = async () => {
   try {
@@ -50,7 +91,9 @@ const startServer = async () => {
       res.send("Matestay API is running...");
     });
 
-    
+    // 6. Global Error Handler - Must be last middleware
+    app.use(errorHandler);
+
     const userSocketMap = new Map();
 
     io.on("connection", (socket) => {

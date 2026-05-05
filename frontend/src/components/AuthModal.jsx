@@ -1,383 +1,236 @@
 import React, { useContext, useState } from "react";
+import { toast } from "sonner";
 import axios from "../api/axiosInstance";
 import { AuthContext } from "../context/AuthContext";
+import { Loader2, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import {
-  Loader2,
-  Mail,
-  Lock,
-  User,
-  Eye,
-  EyeOff
-} from "lucide-react";
-import ForgotPasswordModal from "./ForgotPasswordModal";
+import { Label } from "@/components/ui/label";
 
 export default function AuthModal({ onClose }) {
   const { login } = useContext(AuthContext);
-
-  const [tab, setTab] = useState("login");
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [mode, setMode] = useState("login"); // "login" or "register"
   const [loading, setLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    name: "",
+  });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" });
-  };
-
-  const validate = () => {
-    const e = {};
-
-    if (tab === "signup" && !form.name.trim()) e.name = "Name is required";
-
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
-      e.email = "Enter a valid email";
-
-    if (!form.password) e.password = "Password is required";
-    else if (tab === "signup" && form.password.length < 6)
-      e.password = "Minimum 6 characters";
-
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSignup = async (e) => {
+  // Handle email/password login
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-
-    setLoading(true);
-    try {
-      const { data } = await axios.post("/auth/register", form);
-      toast.success("Account created! Check your inbox (Spam too).");
-      setTab("login");
-      setForm({ name: "", email: form.email, password: "" });
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Signup failed.");
+    
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
     }
-    setLoading(false);
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
 
     setLoading(true);
     try {
-      const { data } = await axios.post("/auth/login", form);
+      const { data } = await axios.post("/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (data.needsVerification) {
+        toast.info("Please verify your email first. Check your inbox!");
+        setMode("verify");
+        return;
+      }
 
       login(data.user, data.token);
       toast.success("Login successful!");
       onClose?.();
     } catch (err) {
-      const error = err.response?.data;
-
-      if (error?.needsVerification) {
-        toast.error(
-          <div>
-            <p>{error.message}</p>
-            <Button
-              className="mt-2"
-              onClick={() =>
-                axios.post("/auth/resend-verification", { email: error.email })
-              }
-            >
-              Resend Email
-            </Button>
-          </div>
-        );
-      } else toast.error(error?.message || "Login failed.");
+      toast.error(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  if (showForgotPassword)
-    return (
-      <ForgotPasswordModal
-        onClose={onClose}
-        onShowLogin={() => setShowForgotPassword(false)}
-      />
-    );
+  // Handle email/password registration
+  const handleEmailRegister = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+    console.log(`📝 Attempting registration for: ${formData.email}`);
+    
+    try {
+      const { data } = await axios.post("/auth/register", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      console.log("✅ Registration successful:", data);
+      toast.success(data.message || "Registration successful! Please check your email to verify your account.");
+      toast.info("Verification email sent to your inbox. Check spam folder if not found.");
+      setFormData({ email: "", password: "", name: "" });
+      setMode("login");
+    } catch (err) {
+      console.error("❌ Registration error:", {
+        status: err.response?.status,
+        message: err.response?.data?.message,
+        error: err.response?.data?.error,
+        details: err.response?.data?.details
+      });
+      toast.error(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center
-      bg-black/50 backdrop-blur-sm animate-fadeIn"
-    >
-      <div
-        className="bg-card rounded-2xl w-full max-w-md p-6 mx-4
-        shadow-xl border border-white/10 animate-scaleUp"
-      >
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold tracking-tight">
-            {tab === "login" ? "Welcome Back" : "Create Account"}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            {mode === "login" ? "Login" : "Create Account"}
           </h2>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground text-xl"
+            className="text-lg text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Close auth modal"
           >
-            ✖
+            ×
           </button>
         </div>
 
-        {/* TABS */}
-        <div className="flex bg-muted p-1 rounded-xl mb-6">
-          <button
-            className={`flex-1 py-2 rounded-lg transition-all ${
-              tab === "login"
-                ? "bg-background shadow font-semibold"
-                : "text-muted-foreground"
-            }`}
-            onClick={() => setTab("login")}
-          >
-            Login
-          </button>
-          <button
-            className={`flex-1 py-2 rounded-lg transition-all ${
-              tab === "signup"
-                ? "bg-background shadow font-semibold"
-                : "text-muted-foreground"
-            }`}
-            onClick={() => setTab("signup")}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {/* SIGNUP FORM */}
-        {tab === "signup" ? (
-          <form onSubmit={handleSignup} className="space-y-4">
-
-            {/* NAME */}
-            <div>
+        {/* Email/Password Form */}
+        <form onSubmit={mode === "login" ? handleEmailLogin : handleEmailRegister} className="space-y-4">
+          {/* Name field (only for registration) */}
+          {mode === "register" && (
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                Full Name
+              </Label>
               <div className="relative">
-                <User className="auth-icon" />
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Full Name"
+                  id="name"
                   name="name"
-                  value={form.name}
-                  onChange={handleChange}
+                  type="text"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="pl-10"
                   disabled={loading}
-                  className={`auth-input ${
-                    errors.name ? "auth-error" : ""
-                  }`}
                 />
               </div>
-              {errors.name && (
-                <p className="auth-error-text">{errors.name}</p>
-              )}
             </div>
+          )}
 
-            {/* EMAIL */}
-            <div>
-              <div className="relative">
-                <Mail className="auth-icon" />
-                <Input
-                  type="email"
-                  placeholder="Email Address"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`auth-input ${
-                    errors.email ? "auth-error" : ""
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="auth-error-text">{errors.email}</p>
-              )}
+          {/* Email field */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email Address
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="your@email.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="pl-10"
+                disabled={loading}
+              />
             </div>
+          </div>
 
-            {/* PASSWORD + TOGGLE */}
-            <div>
-              <div className="relative">
-                <Lock className="auth-icon" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password (min 6 characters)"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`auth-input ${
-                    errors.password ? "auth-error" : ""
-                  }`}
-                />
-
-                <button
-                  type="button"
-                  className="toggle-icon"
-                  onClick={() => setShowPassword((v) => !v)}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="auth-error-text">{errors.password}</p>
-              )}
+          {/* Password field */}
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium">
+              Password
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder={mode === "login" ? "Enter password" : "At least 6 characters"}
+                value={formData.password}
+                onChange={handleInputChange}
+                className="pl-10"
+                disabled={loading}
+              />
             </div>
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full h-11 rounded-xl font-semibold"
-              disabled={loading}
-            >
-              {loading ? (
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "Create Account"
-              )}
-            </Button>
+                {mode === "login" ? "Logging in..." : "Creating account..."}
+              </>
+            ) : mode === "login" ? (
+              "Login"
+            ) : (
+              "Create Account"
+            )}
+          </Button>
+        </form>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Verification email sent. Check inbox & spam folder.
-            </p>
-          </form>
-        ) : (
-          /* LOGIN FORM */
-          <form onSubmit={handleLogin} className="space-y-4">
-
-            {/* EMAIL */}
-            <div>
-              <div className="relative">
-                <Mail className="auth-icon" />
-                <Input
-                  type="email"
-                  placeholder="Email Address"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`auth-input ${
-                    errors.email ? "auth-error" : ""
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="auth-error-text">{errors.email}</p>
-              )}
-            </div>
-
-            {/* PASSWORD + TOGGLE */}
-            <div>
-              <div className="relative">
-                <Lock className="auth-icon" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`auth-input ${
-                    errors.password ? "auth-error" : ""
-                  }`}
-                />
-                <button
-                  type="button"
-                  className="toggle-icon"
-                  onClick={() => setShowPassword((v) => !v)}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="auth-error-text">{errors.password}</p>
-              )}
-            </div>
-
-            <div className="text-right">
-              <Button
-                type="button"
-                variant="link"
-                className="p-0 text-sm"
-                onClick={() => setShowForgotPassword(true)}
+        {/* Toggle Mode */}
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          {mode === "login" ? (
+            <>
+              Don't have an account?{" "}
+              <button
+                onClick={() => setFormData({ email: "", password: "", name: "" }) || setMode("register")}
+                className="text-primary hover:underline font-medium"
               >
-                Forgot Password?
-              </Button>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-11 rounded-xl font-semibold"
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "Login"
-              )}
-            </Button>
-
-            <p className="text-xs text-center text-muted-foreground">
-              Didn’t get verification email? Check spam folder.
-            </p>
-          </form>
-        )}
+                Register
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <button
+                onClick={() => setFormData({ email: "", password: "", name: "" }) || setMode("login")}
+                className="text-primary hover:underline font-medium"
+              >
+                Login
+              </button>
+            </>
+          )}
+        </div>
       </div>
-
-      {/* INTERNAL CSS FOR PIXEL-PERFECT UI + ANIMATION */}
-      <style>
-        {`
-          .auth-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted-foreground);
-            width: 18px;
-            height: 18px;
-          }
-
-          .toggle-icon {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted-foreground);
-          }
-
-          .auth-input {
-            padding-left: 40px;
-            height: 44px;
-            border-radius: 12px;
-          }
-
-          .auth-error {
-            border-color: #ef4444 !important;
-          }
-
-          .auth-error-text {
-            color: #ef4444;
-            font-size: 12px;
-            margin-top: 4px;
-          }
-
-          .animate-fadeIn {
-            animation: fadeIn 0.25s ease-out;
-          }
-
-          .animate-scaleUp {
-            animation: scaleUp 0.3s ease-out;
-          }
-
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-
-          @keyframes scaleUp {
-            from { transform: scale(0.92); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-          }
-        `}
-      </style>
     </div>
   );
 }

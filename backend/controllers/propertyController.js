@@ -4,6 +4,26 @@ import User from "../models/User.js";
 // --- Create Property ---
 export const createProperty = async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
+
+    // Check if free user has reached listing limit
+    if (!user.isPremium) {
+      const MAX_FREE_LISTINGS = 3; // Free users can have max 3 active listings
+      const activeListingCount = await Property.countDocuments({
+        lister: req.user.id,
+        isAvailable: true,
+      });
+
+      if (activeListingCount >= MAX_FREE_LISTINGS) {
+        return res.status(403).json({
+          message: `Free users can only list up to ${MAX_FREE_LISTINGS} active properties. Upgrade to premium for unlimited listings.`,
+          limitReached: true,
+          currentCount: activeListingCount,
+          limit: MAX_FREE_LISTINGS,
+        });
+      }
+    }
+
     const newProperty = new Property({
       ...req.body,
       lister: req.user.id,
@@ -21,10 +41,18 @@ export const getFeaturedProperties = async (req, res) => {
   try {
     const limit = Number(req.query.limit) || 4;
     const properties = await Property.find({ isAvailable: true })
+      .populate("lister", "name profilePic isPremium subscriptionTier")
       .sort({ createdAt: -1 })
-      .limit(limit)
-      .populate("lister", "name profilePic");
-    res.status(200).json(properties);
+      .limit(limit);
+
+    // Sort to show premium members' properties first
+    const sorted = properties.sort((a, b) => {
+      const aIsPremium = a.lister?.isPremium ? 1 : 0;
+      const bIsPremium = b.lister?.isPremium ? 1 : 0;
+      return bIsPremium - aIsPremium;
+    });
+
+    res.status(200).json(sorted);
   } catch (error) {
     console.error("Backend: Error fetching featured properties:", error);
     res.status(500).json({ message: "Error fetching featured properties", error: error.message });
@@ -78,10 +106,17 @@ export const searchProperties = async (req, res) => {
     }
 
     const properties = await Property.find(query)
-      .populate('lister', 'name email profilePic')
+      .populate('lister', 'name email profilePic isPremium subscriptionTier')
       .sort({ createdAt: -1 });
 
-    res.json(properties);
+    // Sort to show premium members' properties first
+    const sorted = properties.sort((a, b) => {
+      const aIsPremium = a.lister?.isPremium ? 1 : 0;
+      const bIsPremium = b.lister?.isPremium ? 1 : 0;
+      return bIsPremium - aIsPremium;
+    });
+
+    res.json(sorted);
   } catch (error) {
     console.error('Error searching properties:', error);
     res.status(500).json({ message: 'Server error' });

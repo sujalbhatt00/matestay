@@ -42,7 +42,7 @@ export const updateProfile = async (req, res) => {
     const {
       name, phone, gender, age, location,
       budget, occupation, lifestyle, bio, profilePic,
-      lookingFor,
+      lookingFor, smokingPreference, sleepSchedule, cleanlinessLevel,
     } = req.body;
 
     if (profilePic && profilePic !== user.profilePic && user.profilePic && user.profilePic.includes('cloudinary')) {
@@ -64,6 +64,9 @@ export const updateProfile = async (req, res) => {
     user.lifestyle = lifestyle ?? user.lifestyle;
     user.profilePic = profilePic ?? user.profilePic;
     user.lookingFor = lookingFor ?? user.lookingFor;
+    user.smokingPreference = smokingPreference ?? user.smokingPreference;
+    user.sleepSchedule = sleepSchedule ?? user.sleepSchedule;
+    user.cleanlinessLevel = cleanlinessLevel ?? user.cleanlinessLevel;
 
     if (bio !== undefined) {
       user.bio = bio;
@@ -150,22 +153,84 @@ export const getProfileViews = async (req, res) => {
 
 export const searchUsers = async (req, res) => {
   try {
-    const { location, maxBudget, gender, budget } = req.query;
+    const {
+      location,
+      maxBudget,
+      gender,
+      budget,
+      minAge,
+      maxAge,
+      smoking,
+      sleepSchedule,
+      cleanlinessLevel,
+    } = req.query;
     const query = { profileSetupComplete: true };
+    const andConditions = [];
 
+    // Location filter
     if (location) {
       query.location = { $regex: location, $options: "i" };
     }
+
+    // Budget filter (maxBudget or budget)
     if (maxBudget) {
       query.budget = { $lte: Number(maxBudget) };
     } else if (budget) {
       query.budget = { $lte: Number(budget) };
     }
-    if (gender && gender !== 'Any') {
+
+    // Gender filter
+    if (gender && gender !== "Any") {
       query.gender = gender;
     }
 
-    const users = await User.find(query).select("-password");
+    // Age range filter
+    if (minAge || maxAge) {
+      query.age = {};
+      if (minAge) query.age.$gte = Number(minAge);
+      if (maxAge) query.age.$lte = Number(maxAge);
+    }
+
+    // Smoking preference filter - match either the value or undefined (treat as "Any")
+    if (smoking && smoking !== "Any") {
+      andConditions.push({
+        $or: [
+          { smokingPreference: smoking },
+          { smokingPreference: { $exists: false } }
+        ]
+      });
+    }
+
+    // Sleep schedule filter - match either the value or undefined (treat as "Any")
+    if (sleepSchedule && sleepSchedule !== "Any") {
+      andConditions.push({
+        $or: [
+          { sleepSchedule: sleepSchedule },
+          { sleepSchedule: { $exists: false } }
+        ]
+      });
+    }
+
+    // Cleanliness level filter - match either the value or undefined (treat as "Any")
+    if (cleanlinessLevel && cleanlinessLevel !== "Any") {
+      andConditions.push({
+        $or: [
+          { cleanlinessLevel: cleanlinessLevel },
+          { cleanlinessLevel: { $exists: false } }
+        ]
+      });
+    }
+
+    // Apply all preference conditions with AND logic
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+
+    // Sort by isPremium first (premium users first), then by creation date
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ isPremium: -1, createdAt: -1 });
+    
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -181,7 +246,9 @@ export const getFeaturedUsers = async (req, res) => {
     }
     const users = await User.aggregate([
       { $match: match },
-      { $sample: { size: 6 } },
+      { $sort: { isPremium: -1 } }, // Show premium users first
+      { $limit: 12 }, // Get more to have variety
+      { $sample: { size: 6 } }, // Then randomly sample to maintain some randomness
       { $project: { password: 0 } }
     ]);
     res.json(users);

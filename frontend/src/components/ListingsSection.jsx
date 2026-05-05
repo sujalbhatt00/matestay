@@ -31,32 +31,32 @@ const ListingsSection = () => {
   }, []);
 
   return (
-    <section className="py-12">
+    <section className="py-12 sm:py-16 md:py-20">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-8">Featured Properties</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">Featured Properties</h2>
         
         {loading && (
-          <div className="flex justify-center">
+          <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
 
         {error && (
-          <p className="text-center text-red-500">{error}</p>
+          <p className="text-center text-sm sm:text-base text-red-500">{error}</p>
         )}
 
         {!loading && !error && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8">
               {properties.map(property => (
                 <PropertyCard key={property._id} property={property} />
               ))}
             </div>
             {properties.length === 0 && (
-              <p className="text-center text-muted-foreground">No featured properties available right now.</p>
+              <p className="text-center text-xs sm:text-sm md:text-base text-muted-foreground">No featured properties available right now.</p>
             )}
-            <div className="text-center mt-12">
-              <Button onClick={() => navigate('/properties/all')}>
+            <div className="text-center mt-10 sm:mt-12">
+              <Button onClick={() => navigate('/properties/all')} className="px-6 sm:px-8 py-2 sm:py-3">
                 View All Properties
               </Button>
             </div>
