@@ -21,7 +21,7 @@ const PropertyCard = ({ property }) => {
       className="overflow-hidden border border-border bg-white dark:bg-neutral-900 hover:border-foreground/30 transition-all duration-200 hover:shadow-md cursor-pointer group flex flex-col h-full"
       onClick={handleClick}
     >
-      <div className="relative h-48 w-full overflow-hidden bg-gray-300 dark:bg-gray-700 flex-shrink-0">
+      <div className="relative h-40 sm:h-44 w-full overflow-hidden bg-gray-300 dark:bg-gray-700 flex-shrink-0">
         <img
           src={property.photos?.[0] || property.images?.[0] || "https://via.placeholder.com/400x300"}
           alt={property.title}
@@ -54,35 +54,35 @@ const PropertyCard = ({ property }) => {
         </div>
       </div>
 
-      <CardContent className="p-4 space-y-3 flex-grow flex flex-col">
+      <CardContent className="p-3 sm:p-4 space-y-3 flex-grow flex flex-col">
         <div>
-          <h3 className="text-base font-bold line-clamp-2 group-hover:text-foreground transition-colors">
+          <h3 className="text-sm sm:text-base font-bold line-clamp-2 group-hover:text-foreground transition-colors">
             {property.title}
           </h3>
           {property.location && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2 text-[11px] sm:text-xs">
               <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <p className="text-xs text-muted-foreground line-clamp-1">{property.location}</p>
+              <p className="text-muted-foreground line-clamp-1">{property.location}</p>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           {property.bedrooms !== undefined && (
-            <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-              <BedDouble className="h-4 w-4 text-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">
+              <BedDouble className="h-3.5 w-3.5 text-foreground flex-shrink-0" />
               <div>
-                <div className="font-bold">{property.bedrooms}</div>
-                <div className="text-muted-foreground text-[10px]">Beds</div>
+                <div className="font-bold text-xs">{property.bedrooms}</div>
+                <div className="text-muted-foreground text-[9px]">Beds</div>
               </div>
             </div>
           )}
           {property.bathrooms !== undefined && (
-            <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-              <Bath className="h-4 w-4 text-foreground flex-shrink-0" />
+            <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">
+              <Bath className="h-3.5 w-3.5 text-foreground flex-shrink-0" />
               <div>
-                <div className="font-bold">{property.bathrooms}</div>
-                <div className="text-muted-foreground text-[10px]">Baths</div>
+                <div className="font-bold text-xs">{property.bathrooms}</div>
+                <div className="text-muted-foreground text-[9px]">Baths</div>
               </div>
             </div>
           )}
@@ -92,7 +92,7 @@ const PropertyCard = ({ property }) => {
           variant="outline"
           size="sm"
           onClick={handleClick}
-          className="w-full h-8 rounded-lg text-xs font-semibold mt-auto"
+          className="w-full h-8 rounded-lg text-[11px] font-semibold mt-auto"
         >
           View Details
         </Button>

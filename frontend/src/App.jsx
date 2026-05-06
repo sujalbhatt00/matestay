@@ -26,6 +26,8 @@ import AllPropertiesPage from "./pages/AllPropertiesPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import PremiumPage from "./pages/PremiumPage";
 import EditPropertyPage from "./pages/EditPropertyPage";
+import VerifyEmail from "./pages/VerifyEmail";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Footer pages
 import AboutUs from "./pages/AboutUs";
@@ -46,7 +48,7 @@ function MainContent() {
   const location = useLocation();
 
   return (
-    <main className="flex-grow pb-20 md:pb-0" key={location.pathname}>
+    <main className="flex-grow pb-28 md:pb-0 overflow-x-hidden" key={location.pathname}>
       <Routes>
 
         {/* Public Routes */}
@@ -61,6 +63,8 @@ function MainContent() {
         <Route path="/search" element={<LocationSearchPage />} />
         <Route path="/properties/all" element={<AllPropertiesPage />} />
         <Route path="/properties/search" element={<PropertiesSearchPage />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/* Footer Routes */}
         <Route path="/about" element={<AboutUs />} />
@@ -96,7 +100,7 @@ function App() {
             {/*  Auto Scroll on Every Page Navigation */}
             <ScrollToTop />
 
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen overflow-x-hidden">
               <Navbar />
               <MainContent />
               <Footer />

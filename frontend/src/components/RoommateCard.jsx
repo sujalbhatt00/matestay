@@ -92,7 +92,7 @@ const RoommateCard = ({ roommate }) => {
       className="w-full rounded-lg border border-border bg-white dark:bg-neutral-900 hover:border-foreground/30 transition-all duration-200 hover:shadow-md cursor-pointer group flex flex-col h-full relative"
       onClick={() => navigate(`/profile/${roommate._id}`)}
     >
-      <div className="relative h-48 bg-gray-300 dark:bg-gray-700 flex-shrink-0 rounded-t-lg overflow-visible">
+      <div className="relative h-36 sm:h-44 bg-gray-300 dark:bg-gray-700 flex-shrink-0 rounded-t-lg overflow-visible">
         <img
           src={roommate.profilePic || defaultAvatar}
           alt={roommate.name}
@@ -240,13 +240,13 @@ const RoommateCard = ({ roommate }) => {
         )}
       </div>
 
-      <CardContent className="p-4 space-y-3 flex-grow flex flex-col">
+      <CardContent className="p-3 sm:p-4 space-y-2 flex-grow flex flex-col">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-base font-bold line-clamp-1">{roommate.name}</h3>
-            {roommate.age && <p className="text-xs text-muted-foreground">{roommate.age} years</p>}
+            <h3 className="text-sm sm:text-base font-bold line-clamp-1">{roommate.name}</h3>
+            {roommate.age && <p className="text-[11px] text-muted-foreground">{roommate.age} years</p>}
           </div>
-          {isOwnProfile && <Badge variant="outline" className="text-xs flex-shrink-0">You</Badge>}
+          {isOwnProfile && <Badge variant="outline" className="text-[10px] flex-shrink-0">You</Badge>}
         </div>
 
         {roommate.occupation && (
@@ -257,14 +257,14 @@ const RoommateCard = ({ roommate }) => {
         )}
 
         {roommate.location && (
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <p className="text-xs text-muted-foreground line-clamp-1">{roommate.location}</p>
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs">
+            <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <p className="text-muted-foreground line-clamp-1">{roommate.location}</p>
           </div>
         )}
 
         {roommate.bio && (
-          <p className="text-xs text-muted-foreground line-clamp-2">"{roommate.bio}"</p>
+          <p className="hidden sm:block text-xs text-muted-foreground line-clamp-2">"{roommate.bio}"</p>
         )}
 
         <div className="flex gap-2 pt-2 mt-auto">
@@ -289,7 +289,7 @@ const RoommateCard = ({ roommate }) => {
                   e.stopPropagation();
                   navigate(`/profile/${roommate._id}`);
                 }}
-                className="flex-1 h-8 rounded-lg text-xs"
+                className="flex-1 h-8 rounded-lg text-[10px]"
               >
                 View
               </Button>
@@ -301,7 +301,7 @@ const RoommateCard = ({ roommate }) => {
                   handleStartChat();
                 }}
                 disabled={isStartingChat}
-                className="flex-1 h-8 rounded-lg text-xs bg-black dark:bg-white text-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100"
+                className="flex-1 h-8 rounded-lg text-[10px] bg-black dark:bg-white text-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100"
               >
                 {isStartingChat ? (
                   <Loader2 className="h-3 w-3 animate-spin" />

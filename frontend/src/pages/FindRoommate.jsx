@@ -92,7 +92,7 @@ const FindRoommatesPage = () => {
 
       {/* Header */}
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold tracking-tight">Find Your Roommate</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Find Your Flatmmate</h1>
         <p className="text-lg text-muted-foreground mt-1">Filter profiles and match easily.</p>
       </div>
 
@@ -273,7 +273,7 @@ const FindRoommatesPage = () => {
         <>
           {roommates.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:hidden gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:hidden gap-3">
                 {roommates.map((user) => (
                   <RoommateCard key={user._id} roommate={user} />
                 ))}

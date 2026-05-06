@@ -59,25 +59,25 @@ export default function FindRooms() {
   };
 
   return (
-    <div className="pt-24 pb-24 container mx-auto px-3 sm:px-4 lg:px-6">
+    <div className="pt-24 pb-28 container mx-auto px-3 sm:px-4 lg:px-6 overflow-x-hidden">
 
       <div className="text-center mb-8 animate-fadeUp">
-        <h1 className="text-3xl sm:text-4xl font-bold">Find Rooms</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold">Find Flats</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-2">
           Search rooms based on your preferred location and budget.
         </p>
       </div>
 
-      <div className="bg-card border border-border/40 rounded-xl shadow-sm max-w-4xl mx-auto p-4 sm:p-6 animate-fadeUp">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="bg-card border border-border/40 rounded-xl shadow-sm max-w-4xl mx-auto p-4 sm:p-6 animate-fadeUp overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3 items-stretch">
 
           <div className="flex-1 min-w-0">
             <LocationCombobox value={location} onChange={setLocation} />
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:gap-2">
             <Button
-              className="h-10 px-4 text-sm flex-1 sm:flex-none"
+              className="h-10 px-3 sm:px-4 text-sm w-full sm:w-auto"
               onClick={loadRooms}
             >
               <Search className="h-4 w-4 mr-2" /> Apply
@@ -85,7 +85,7 @@ export default function FindRooms() {
 
             <Button
               variant="outline"
-              className="h-10 px-3 text-sm flex gap-2"
+              className="h-10 px-3 text-sm w-full sm:w-auto flex gap-2"
               onClick={() => setShowFilters((v) => !v)}
             >
               <SlidersHorizontal className="h-4 w-4" /> Filters
@@ -142,18 +142,9 @@ export default function FindRooms() {
         </div>
       ) : rooms.length > 0 ? (
         <div className="mt-6 animate-fadeUp">
-          <div
-            className="
-              grid gap-4
-              grid-cols-2         /* mobile: 2 per row */
-              sm:grid-cols-2
-              md:grid-cols-3
-              lg:grid-cols-4
-              xl:grid-cols-5
-            "
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {rooms.map((room) => (
-              <div key={room._id} className="w-full h-full">
+              <div key={room._id} className="w-full min-w-0 h-full">
                 <PropertyCard property={room} />
               </div>
             ))}

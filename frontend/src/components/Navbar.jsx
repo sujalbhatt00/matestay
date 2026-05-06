@@ -233,76 +233,78 @@ const Navbar = () => {
       </nav>
 
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border flex items-center justify-between px-4 py-2 md:hidden">
-        <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
-          <img src="/Logo.png" width={30} alt="logo" />
-          <span className="text-lg font-bold">MateStay</span>
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 py-2 md:hidden">
+        <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer min-w-0">
+          <img src="/Logo.png" width={28} alt="logo" />
+          <span className="text-base font-bold truncate">MateStay</span>
         </div>
-        <button onClick={toggleTheme} className="p-1.5 rounded-full">
+        <button onClick={toggleTheme} className="p-2 rounded-full active:scale-95 transition-transform">
           {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border md:hidden">
-        <div className="flex items-center justify-between px-3 py-2">
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-2 mb-2 rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-[0_-12px_30px_rgba(0,0,0,0.12)]">
+          <div className="flex items-center justify-between px-2 py-2">
 
-          <button onClick={() => navigate("/")} className="flex flex-col items-center text-[10px]">
-            <Home className="h-5 w-5" />
-            Home
-          </button>
+            <button onClick={() => navigate("/")} className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-w-[52px]">
+              <Home className="h-5 w-5" />
+              Home
+            </button>
 
-          <button onClick={() => navigate("/find-rooms")} className="flex flex-col items-center text-[10px]">
-            <BedDouble className="h-5 w-5" />
-            Rooms
-          </button>
+            <button onClick={() => navigate("/find-rooms")} className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-w-[52px]">
+              <BedDouble className="h-5 w-5" />
+              Flats
+            </button>
 
-          <button
-            onClick={() => {
-              if (user) navigate("/create-listing");
-              else setShowAuth(true);
-            }}
-            className="flex flex-col items-center text-[10px]"
-          >
-            <Plus className="h-5 w-5" />
-            Post 
-          </button>
+            <button
+              onClick={() => {
+                if (user) navigate("/create-listing");
+                else setShowAuth(true);
+              }}
+              className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-w-[52px]"
+            >
+              <Plus className="h-5 w-5" />
+              Post
+            </button>
 
-          <button onClick={() => navigate("/find-roommates")} className="flex flex-col items-center text-[10px]">
-            <Users className="h-5 w-5" />
-            find Mates
-          </button>
+            <button onClick={() => navigate("/find-roommates")} className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-w-[52px]">
+              <Users className="h-5 w-5" />
+              Flatmates
+            </button>
 
-          {/* Mobile Chat button opens login modal if not logged in */}
-          <button
-            onClick={() => {
-              if (!user) setShowAuth(true);
-              else navigate("/chat");
-            }}
-            className="flex flex-col items-center text-[10px] relative"
-          >
-            <MessageSquare className="h-5 w-5" />
-            Chat
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
+            {/* Mobile Chat button opens login modal if not logged in */}
+            <button
+              onClick={() => {
+                if (!user) setShowAuth(true);
+                else navigate("/chat");
+              }}
+              className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors relative min-w-[52px]"
+            >
+              <MessageSquare className="h-5 w-5" />
+              Chat
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-1 h-4 w-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {/* Profile Button */}
-          <button
-            onClick={() => {
-              if (!user) setShowAuth(true);
-              else setShowMobileProfile(true);
-            }}
-            className="flex flex-col items-center text-[10px]"
-          >
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={user?.profilePic || defaultAvatar} />
-            </Avatar>
-            You
-          </button>
+            {/* Profile Button */}
+            <button
+              onClick={() => {
+                if (!user) setShowAuth(true);
+                else setShowMobileProfile(true);
+              }}
+              className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-w-[52px]"
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={user?.profilePic || defaultAvatar} />
+              </Avatar>
+              You
+            </button>
+          </div>
         </div>
       </div>
 

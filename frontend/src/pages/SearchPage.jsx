@@ -11,49 +11,64 @@ const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Unified filter state
   const [type, setType] = useState(searchParams.get("type") || "roommate");
   const [location, setLocation] = useState(searchParams.get("location") || "");
   const [gender, setGender] = useState(searchParams.get("gender") || "Any");
   const [budget, setBudget] = useState(searchParams.get("budget") || "");
-  const [propertyType, setPropertyType] = useState(searchParams.get("propertyType") || "");
+  const [propertyType, setPropertyType] = useState(
+    searchParams.get("propertyType") || ""
+  );
 
-  // Results state
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Update URL on filter change
   useEffect(() => {
     const params = new URLSearchParams();
+
     params.set("type", type);
+
     if (location) params.set("location", location);
     if (gender && gender !== "Any") params.set("gender", gender);
     if (budget) params.set("budget", budget);
-    if (propertyType && type === "room") params.set("propertyType", propertyType);
+
+    if (propertyType && type === "room") {
+      params.set("propertyType", propertyType);
+    }
 
     navigate(`/search?${params.toString()}`, { replace: true });
   }, [type, location, gender, budget, propertyType, navigate]);
 
-  // Fetch results
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
+
       try {
+        const params = new URLSearchParams();
+
+        if (location) params.append("location", location);
+
         if (type === "room") {
-          // Search properties
-          const params = new URLSearchParams();
-          if (location) params.append("location", location);
           if (budget) params.append("maxPrice", budget);
-          if (propertyType) params.append("propertyType", propertyType);
-          const res = await axios.get(`/properties/search?${params.toString()}`);
+          if (propertyType) {
+            params.append("propertyType", propertyType);
+          }
+
+          const res = await axios.get(
+            `/properties/search?${params.toString()}`
+          );
+
           setResults(res.data);
         } else {
-          // Search roommates
-          const params = new URLSearchParams();
-          if (location) params.append("location", location);
-          if (gender && gender !== "Any") params.append("gender", gender);
+          if (gender && gender !== "Any") {
+            params.append("gender", gender);
+          }
+
           if (budget) params.append("maxBudget", budget);
-          const res = await axios.get(`/user/search-public?${params.toString()}`);
+
+          const res = await axios.get(
+            `/user/search-public?${params.toString()}`
+          );
+
           setResults(res.data);
         }
       } catch (err) {
@@ -62,48 +77,62 @@ const SearchPage = () => {
         setLoading(false);
       }
     };
+
     fetchResults();
   }, [type, location, gender, budget, propertyType]);
 
-  // Unified filter bar
   return (
-    <div className="min-h-screen pt-24 bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-card rounded-xl shadow-lg p-6 border border-border mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            {/* Type Switch */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Search For</label>
-              <div className="flex gap-2">
+    <div className="min-h-screen bg-background pt-20 sm:pt-24">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="bg-card border border-border rounded-2xl shadow-sm p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="text-sm font-medium block mb-2">
+                Search For
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant={type === "roommate" ? "default" : "outline"}
                   onClick={() => setType("roommate")}
-                  className="flex items-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 text-sm"
                 >
-                  <Users className="h-4 w-4" /> Roommate
+                  <Users className="h-4 w-4" />
+                  Roommate
                 </Button>
+
                 <Button
                   variant={type === "room" ? "default" : "outline"}
                   onClick={() => setType("room")}
-                  className="flex items-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 text-sm"
                 >
-                  <BedDouble className="h-4 w-4" /> Room
+                  <BedDouble className="h-4 w-4" />
+                  Room
                 </Button>
               </div>
             </div>
-            {/* Location */}
-            <div className="w-full max-w-xs">
-              <label className="text-sm font-medium">Location</label>
-              <LocationCombobox value={location} onChange={setLocation} />
+
+            <div className="w-full min-w-0">
+              <label className="text-sm font-medium block mb-2">
+                Location
+              </label>
+
+              <LocationCombobox
+                value={location}
+                onChange={setLocation}
+              />
             </div>
-            {/* Gender (only for roommate) */}
+
             {type === "roommate" && (
-              <div className="w-full max-w-xs">
-                <label className="text-sm font-medium">Gender</label>
+              <div className="w-full min-w-0">
+                <label className="text-sm font-medium block mb-2">
+                  Gender
+                </label>
+
                 <select
-                  className="w-full border rounded px-2 py-1 mt-1"
                   value={gender}
-                  onChange={e => setGender(e.target.value)}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full border border-border bg-background rounded-lg px-3 py-2.5 text-sm outline-none"
                 >
                   <option value="Any">Any</option>
                   <option value="Male">Male</option>
@@ -112,14 +141,17 @@ const SearchPage = () => {
                 </select>
               </div>
             )}
-            {/* Property Type (only for room) */}
+
             {type === "room" && (
-              <div className="w-full max-w-xs">
-                <label className="text-sm font-medium">Property Type</label>
+              <div className="w-full min-w-0">
+                <label className="text-sm font-medium block mb-2">
+                  Property Type
+                </label>
+
                 <select
-                  className="w-full border rounded px-2 py-1 mt-1"
                   value={propertyType}
-                  onChange={e => setPropertyType(e.target.value)}
+                  onChange={(e) => setPropertyType(e.target.value)}
+                  className="w-full border border-border bg-background rounded-lg px-3 py-2.5 text-sm outline-none"
                 >
                   <option value="">Any</option>
                   <option value="Apartment">Apartment</option>
@@ -130,58 +162,73 @@ const SearchPage = () => {
                 </select>
               </div>
             )}
-            {/* Budget */}
-            <div className="w-full max-w-xs">
-              <label className="text-sm font-medium">Max Budget (₹)</label>
+
+            <div className="w-full min-w-0">
+              <label className="text-sm font-medium block mb-2">
+                Max Budget (₹)
+              </label>
+
               <input
                 type="number"
                 min={0}
                 placeholder="e.g. 10000"
                 value={budget}
-                onChange={e => setBudget(e.target.value)}
-                className="w-full border rounded px-2 py-1 mt-1"
+                onChange={(e) => setBudget(e.target.value)}
+                className="w-full border border-border bg-background rounded-lg px-3 py-2.5 text-sm outline-none"
               />
             </div>
           </div>
         </div>
 
-        {/* Results */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : type === "room" ? (
           results.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {results.map(property => (
-                <PropertyCard key={property._id} property={property} />
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {results.map((property) => (
+                <PropertyCard
+                  key={property._id}
+                  property={property}
+                />
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-card border rounded-lg">
-              <BedDouble className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No Properties Found</h3>
-              <p className="text-muted-foreground">
-                No properties available in {location || "your selected location"}.
+            <div className="text-center py-16 sm:py-20 bg-card border rounded-2xl">
+              <BedDouble className="h-14 w-14 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
+
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">
+                No Properties Found
+              </h3>
+
+              <p className="text-sm sm:text-base text-muted-foreground px-4">
+                No properties available in{" "}
+                {location || "your selected location"}.
               </p>
             </div>
           )
+        ) : results.length > 0 ? (
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {results.map((user) => (
+              <RoommateCard
+                key={user._id}
+                roommate={user}
+              />
+            ))}
+          </div>
         ) : (
-          results.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {results.map(user => (
-                <RoommateCard key={user._id} roommate={user} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-card border rounded-lg">
-              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No Roommates Found</h3>
-              <p className="text-muted-foreground">
-                No users found in {location || "your selected location"}.
-              </p>
-            </div>
-          )
+          <div className="text-center py-16 sm:py-20 bg-card border rounded-2xl">
+            <Users className="h-14 w-14 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground" />
+
+            <h3 className="text-lg sm:text-xl font-semibold mb-2">
+              No Roommates Found
+            </h3>
+
+            <p className="text-sm sm:text-base text-muted-foreground px-4">
+              No users found in {location || "your selected location"}.
+            </p>
+          </div>
         )}
       </div>
     </div>

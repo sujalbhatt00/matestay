@@ -6,10 +6,12 @@ import { Loader2, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 export default function AuthModal({ onClose }) {
   const { login } = useContext(AuthContext);
   const [mode, setMode] = useState("login"); // "login" or "register"
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -107,6 +109,7 @@ export default function AuthModal({ onClose }) {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
         {/* Header */}
@@ -187,6 +190,18 @@ export default function AuthModal({ onClose }) {
             </div>
           </div>
 
+          {mode === "login" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
           {/* Submit Button */}
           <Button
             type="submit"
@@ -232,5 +247,13 @@ export default function AuthModal({ onClose }) {
         </div>
       </div>
     </div>
+
+    {showForgotPassword && (
+      <ForgotPasswordModal
+        onClose={() => setShowForgotPassword(false)}
+        onShowLogin={() => setShowForgotPassword(false)}
+      />
+    )}
+    </>
   );
 }

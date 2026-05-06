@@ -45,7 +45,7 @@ const AllPropertiesPage = () => {
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-4 sm:mb-6">
                 Showing {properties.length} {properties.length === 1 ? 'property' : 'properties'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6">
                 {properties.map(property => (
                   <PropertyCard key={property._id} property={property} />
                 ))}
